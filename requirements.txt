@@ -3,3 +3,5 @@ flask==3.0.3
 uvicorn[standard]==0.29.0
 textblob==0.17.1
 pydantic-settings==2.2.1
+yt_dlp==2025.09.26
+git+https://github.com/openai/whisper.git

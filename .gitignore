@@ -1,0 +1,5 @@
+*.txt
+*.json
+app.py
+scripts
+__pycache__/

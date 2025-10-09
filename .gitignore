@@ -3,3 +3,5 @@
 app.py
 scripts
 __pycache__/
+.env
+backup.py

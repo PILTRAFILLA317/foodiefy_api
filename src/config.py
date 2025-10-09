@@ -1,3 +1,4 @@
+from typing import Optional
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -11,5 +12,9 @@ class Settings(BaseSettings):
     API_VERSION: str = "1.0.0"
     DATABASE_URL: str = "sqlite:///./test.db"  # Cambiar según la base de datos utilizada
     SECRET_KEY: str = "your_secret_key"  # Cambiar por una clave secreta segura
+
+    # Google Gemini configuration (optional)
+    GEMINI_API_KEY: Optional[str] = None
+
 
 settings = Settings()

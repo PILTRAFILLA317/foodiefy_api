@@ -1,5 +1,13 @@
+import whisper
+import yt_dlp
 from .config import settings
 import httpx
+try:
+    from google import genai
+    _HAS_GENAI = True
+except Exception:
+    genai = None
+    _HAS_GENAI = False
 from fastapi import APIRouter, FastAPI, Request, HTTPException
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
@@ -12,91 +20,186 @@ import time
 import tempfile
 import subprocess
 from urllib.parse import urlparse
+from dotenv import load_dotenv
+load_dotenv()
 
-import yt_dlp
-
-import whisper
 print("whisper module loaded")
 
 
 app = FastAPI(title=settings.API_TITLE, version=settings.API_VERSION)
-
-
-class SentimentRequest(BaseModel):
-    text: str
-
-
-class SentimentResponse(BaseModel):
-    polarity: float
-    subjectivity: float
-
-
 api_router = APIRouter(prefix="/api", tags=["core"])
-
-
-@api_router.get("/health")
-def healthcheck() -> dict:
-    """Punto de entrada mínimo para comprobar que la API responde."""
-    return {"status": "ok", "version": settings.API_VERSION}
-
-
-@api_router.post("/sentiment", response_model=SentimentResponse)
-def analyze_sentiment(payload: SentimentRequest) -> SentimentResponse:
-    blob = TextBlob(payload.text)
-    sentiment = blob.sentiment
-    return SentimentResponse(
-        polarity=sentiment.polarity,
-        subjectivity=sentiment.subjectivity,
-    )
-
-
-# --- VideoTranscriber / RecipeAnalyzer adapted from previous Flask version ---
-
-
 class RecipeAnalyzer:
     def __init__(self):
-        """Recipe analyzer that optionally uses a DeepSeek/OpenAI-like client.
-
-        The client is optional: if `DEEPSEEK_API_KEY` is not set, analyze_recipe
-        will return an explanatory error instead of raising at init time.
-        """
-        api_key = os.getenv("DEEPSEEK_API_KEY")
-        api_base = os.getenv("DEEPSEEK_API_BASE", "https://api.deepseek.com")
-
-        self.client = None
-        if api_key:
-            try:
-                # Lazy create an httpx client wrapper similar to the original
-                transport = httpx.HTTPTransport(retries=3)
-                self.client = httpx.Client(transport=transport, timeout=60.0)
-                # Note: integration with a specific OpenAI/DeepSeek SDK can be
-                # added here when available.
-                self._api_key = api_key
-                self._api_base = api_base
-            except Exception:
-                self.client = None
+        # Only Gemini with model gemini-2.0-flash is supported
+        self.gemini_key = os.getenv('GEMINI_API_KEY') or getattr(settings, 'GEMINI_API_KEY', None)
+        # Use the requested default model
+        self.model_name = 'gemini-2.0-flash'
+        # httpx client kept for any low-level needs, but we won't use HTTP fallback
+        try:
+            transport = httpx.HTTPTransport(retries=3)
+            self.client = httpx.Client(transport=transport, timeout=60.0)
+        except Exception:
+            self.client = None
 
     def analyze_recipe(self, transcription_data: dict) -> dict:
-        transcription = transcription_data.get("transcription", "")
-        metadata = transcription_data.get("metadata", {})
+        transcription = transcription_data.get('transcription', '')
+        metadata = transcription_data.get('metadata', {})
 
         if not transcription:
-            return {"success": False, "error": "Empty transcription"}
+            return {'success': False, 'error': 'Empty transcription'}
 
-        # If no client available, return a helpful error so caller can decide
-        if not self.client:
-            return {"success": False, "error": "DEEPSEEK_API_KEY not configured; recipe analysis unavailable"}
-
-        # Build prompt (kept simple to avoid external SDK dependency)
+        # Build prompt/context
         context = (
             f"Título del video: {metadata.get('title', 'Sin título')}\n"
             f"Descripción: {metadata.get('description', 'Sin descripción')}\n"
             f"Transcripción: {transcription}"
         )
 
-        # For now, call a hypothetical endpoint or return error (placeholder)
-        # A real implementation would call the external chat/completion API.
-        return {"success": False, "error": "Recipe analysis not implemented on this instance (missing external API integration)"}
+        def _parse_model_text_to_json(text: str):
+            if not text:
+                return None, 'Empty model response'
+            text = text.strip()
+            if text.startswith('```json'):
+                text = text[7:]
+            if text.startswith('```'):
+                text = text[3:]
+            if text.endswith('```'):
+                text = text[:-3]
+            text = text.strip()
+            try:
+                return json.loads(text), None
+            except Exception as e:
+                return None, f'JSON decode error: {e}. Raw: {text[:1000]}'
+
+        if not self.gemini_key:
+            return {'success': False, 'error': 'GEMINI_API_KEY must be configured'}
+
+        prompt = (
+            'Eres un experto en análisis de recetas. Extrae los campos en JSON y responde únicamente con JSON válido.\n\n'
+            + context
+        )
+
+        # Require google.genai client to be installed and GEMINI_API_KEY present.
+        if not _HAS_GENAI or genai is None:
+            return {'success': False, 'error': 'google.genai library not installed; please pip install google-genai'}
+
+        try:
+            client = genai.Client()
+            # Use the fixed model name
+            model_name = self.model_name
+
+            # Verify model is present and supports generateContent
+            supports_generate = False
+            try:
+                for m in client.models.list():
+                    # m.name may be like 'models/gemini-2.5-flash'
+                    m_name = (getattr(m, 'name', '') or '')
+                    display = (getattr(m, 'display_name', '') or '')
+                    # Normalize the candidate name pieces
+                    base_name = m_name.split('/')[-1] if '/' in m_name else m_name
+                    # Accept if the base name equals our model_name or display matches
+                    if base_name == model_name or model_name == m_name or model_name in display:
+                        actions = getattr(m, 'supported_actions', []) or []
+                        if 'generateContent' in actions:
+                            supports_generate = True
+                            break
+            except Exception:
+                # if listing fails, we'll attempt generate and surface any error
+                supports_generate = True
+
+            if not supports_generate:
+                return {'success': False, 'error': f'Model {model_name} not available or does not support generateContent for this account'}
+
+            print('Using model:', model_name)
+            model_text = None
+            # Preferred streaming API (google-genai): client.models.generate_content_stream(...)
+            model_text = None
+            models_api = getattr(client, 'models', None)
+            if models_api is not None and hasattr(models_api, 'generate_content_stream'):
+                # Use the streaming content generator when available
+                try:
+                    print('Using generate_content_stream...')
+                    stream = models_api.generate_content_stream(model=model_name, contents=prompt)
+                    parts = []
+                    for event in stream:
+                        # event shape may vary; try several common attributes
+                        if event is None:
+                            continue
+                        if isinstance(event, str):
+                            parts.append(event)
+                            continue
+                        piece = None
+                        piece = getattr(event, 'text', None) or getattr(event, 'content', None)
+                        if piece is None:
+                            delta = getattr(event, 'delta', None)
+                            if delta is not None:
+                                piece = getattr(delta, 'content', None) or getattr(delta, 'text', None)
+                                if hasattr(piece, 'text'):
+                                    piece = getattr(piece, 'text')
+                        if piece is None and hasattr(event, 'candidates') and event.candidates:
+                            c0 = event.candidates[0]
+                            piece = getattr(c0, 'text', None) or getattr(c0, 'content', None) or getattr(c0, 'message', None)
+                        if piece is None:
+                            try:
+                                parts.append(str(event))
+                            except Exception:
+                                pass
+                        else:
+                            parts.append(piece)
+                    model_text = ''.join([p for p in parts if p])
+                except Exception as se:
+                    # Streaming failed: fall back to other APIs below
+                    print('generate_content_stream error:', se)
+
+            # Fallbacks: prefer direct generate if available, then chat APIs
+            # if not model_text and hasattr(client, 'generate'):
+            #     try:
+            #         resp = client.generate(model=model_name, prompt="Say this is a test")
+            #         print('resp:', resp)
+            #         model_text = getattr(resp, 'text', None) or getattr(resp, 'content', None) or str(resp)
+            #     except Exception as e:
+            #         print('client.generate failed:', e)
+            # elif not model_text and hasattr(client, 'chat'):
+            #     chat = getattr(client, 'chat')
+            #     if hasattr(chat, 'create'):
+            #         try:
+            #             r = chat.create(model=model_name, messages=[{'role': 'user', 'content': "Say this is a test"}])
+            #             model_text = getattr(r, 'message', None) or getattr(r, 'text', None) or str(r)
+            #         except Exception as e:
+            #             print('chat.create failed:', e)
+            #     elif hasattr(chat, 'generate'):
+            #         try:
+            #             r = chat.generate(model=model_name, messages=[{'author': 'user', 'content': {'text': "Say this is a test"}}])
+            #             if hasattr(r, 'candidates') and r.candidates:
+            #                 c0 = r.candidates[0]
+            #                 model_text = getattr(c0, 'content', None) or getattr(c0, 'message', None) or str(c0)
+            #             else:
+            #                 model_text = str(r)
+            #         except Exception as e:
+            #             print('chat.generate failed:', e)
+
+            if model_text and not isinstance(model_text, str):
+                try:
+                    model_text = json.dumps(model_text)
+                except Exception:
+                    model_text = str(model_text)
+
+            parsed, perr = _parse_model_text_to_json(model_text)
+            if parsed is None:
+                return {'success': False, 'error': perr or 'Failed to parse Gemini output to JSON'}
+
+            recipe_data = parsed
+            required_fields = ['descripcion', 'ingredientes', 'pasos', 'tiempo_preparacion', 'cantidad_final', 'macronutrientes']
+            missing_fields = [field for field in required_fields if field not in recipe_data]
+            print('recipe_data:', recipe_data)
+            if missing_fields:
+                return {'success': False, 'error': f'La respuesta de la IA no contiene los campos requeridos: {", ".join(missing_fields)}'}
+
+            return {'success': True, 'recipe': recipe_data}
+        except Exception as e:
+            return {'success': False, 'error': f'Gemini client call failed: {e}'}
+
+        # No HTTP fallback: we require google.genai Client and model to be used.
 
 
 class VideoTranscriber:
@@ -246,9 +349,9 @@ class VideoTranscriber:
                 'transcription': result.get('text', '').strip(),
                 'title': info.get('title', ''),
                 'description': info.get('description', ''),
-                'duration': info.get('duration', 0),
+                # 'duration': info.get('duration', 0),
                 'uploader': info.get('uploader', ''),
-                'view_count': info.get('view_count', 0),
+                # 'view_count': info.get('view_count', 0),
                 'platform': platform
             }
 
@@ -257,8 +360,8 @@ transcriber = VideoTranscriber()
 recipe_analyzer = RecipeAnalyzer()
 
 
-@api_router.post('/transcribe')
-async def transcribe_video(request: Request):
+@api_router.post('/analyze-recipe')
+async def analyze_recipe_endpoint(request: Request):
     try:
         data = await request.json()
     except Exception:
@@ -306,32 +409,9 @@ async def transcribe_video(request: Request):
         recipe_result = recipe_analyzer.analyze_recipe(analysis_data)
         response['recipe_analysis'] = recipe_result
 
-    return JSONResponse(response)
-
-
-@api_router.post('/analyze-recipe')
-async def analyze_recipe_endpoint(request: Request):
-    try:
-        data = await request.json()
-    except Exception:
-        data = None
-
-    if not data:
-        raise HTTPException(status_code=400, detail='No data provided')
-
-    transcription = data.get('transcription', '')
-    metadata = data.get('metadata', {})
-
-    if not transcription:
-        raise HTTPException(
-            status_code=400, detail='Missing required field: transcription')
-
-    analysis_data = {
-        'transcription': transcription,
-        'metadata': metadata
-    }
-
-    result = recipe_analyzer.analyze_recipe(analysis_data)
+    # print('analysis_data:', analysis_data)
+    result = recipe_analyzer.analyze_recipe(result)
+    print('result:', result)
     return JSONResponse(result)
 
 

@@ -6,8 +6,23 @@ env = "python"
 [build]
 cmd = "pip install -r requirements.txt"
 
-[start]
-cmd = "uvicorn src.fastapi_app:app --host 0.0.0.0 --port 6001"
+[phases.setup]
+nixPkgs = ["python312", "ffmpeg"]
 
-[deploy]
-cmd = "uvicorn src.fastapi_app:app --host 0.0.0.0 --port 6001"
+[phases.install]
+cmds = [
+  "python3 -m venv /app/.venv",
+  ". /app/.venv/bin/activate",
+  "pip install --no-cache-dir --upgrade pip",
+  "pip install --no-cache-dir --only-binary=:all: -r requirements.txt"
+]
+
+[phases.build]
+cmds = [". /app/.venv/bin/activate && python -m textblob.download_corpora lite"]
+
+[start]
+cmd = ". /app/.venv/bin/activate && uvicorn src.fastapi_app:app --host 0.0.0.0 --port 6001"
+
+[variables]
+PIP_NO_CACHE_DIR = "1"
+UVICORN_WORKERS = "1"

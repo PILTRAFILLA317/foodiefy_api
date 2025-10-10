@@ -276,6 +276,7 @@ class VideoTranscriber:
             raise RuntimeError(
                 "whisper package is not installed in the environment")
         if self.whisper_model is None:
+            print("Whisper debug.")
             # load model lazily; use cpu by default
             # Load with a watchdog timeout (seconds configurable via WHISPER_LOAD_TIMEOUT env, default 30)
             timeout_sec = int(os.getenv('WHISPER_LOAD_TIMEOUT', '30'))
@@ -292,6 +293,7 @@ class VideoTranscriber:
             finally:
                 signal.alarm(0)
                 signal.signal(signal.SIGALRM, prev_handler)
+        print("Whisper debug 2")
 
     def extract_platform(self, url: str) -> str:
         domain = urlparse(url).netloc.lower()
@@ -417,7 +419,8 @@ class VideoTranscriber:
             # Transcribe using whisper (lazy load)
             print("Transcribing audio with Whisper...")
             self._ensure_whisper()
-            result = self.whisper_model.transcribe(audio_file, fp16=False)
+            print("Whisper debug 3")
+            result = self.whisper_model.transcribe(audio_file)
             print("Transcription completed.")
 
             return {

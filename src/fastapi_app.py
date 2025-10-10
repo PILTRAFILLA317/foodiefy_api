@@ -45,13 +45,20 @@ class RecipeAnalyzer:
         transcription = transcription_data.get('transcription', '')
         metadata = transcription_data.get('metadata', {})
 
+        title_val = metadata.get('title') or transcription_data.get('title') or 'Sin título'
+        description_val = metadata.get('description') or transcription_data.get('description') or 'Sin descripción'
+        uploader_val = metadata.get('uploader') or transcription_data.get('uploader') or 'Desconocido'
+        platform_val = metadata.get('platform') or transcription_data.get('platform') or 'Desconocida'
+
         if not transcription:
             return {'success': False, 'error': 'Empty transcription'}
 
         # Build prompt/context
         context = (
-            f"Título del video: {metadata.get('title', 'Sin título')}\n"
-            f"Descripción: {metadata.get('description', 'Sin descripción')}\n"
+            f"Título del video: {title_val}\n"
+            f"Descripción: {description_val}\n"
+            f"Plataforma: {platform_val}\n"
+            f"Creador: {uploader_val}\n"
             f"Transcripción: {transcription}"
         )
 
@@ -73,9 +80,29 @@ class RecipeAnalyzer:
 
         if not self.gemini_key:
             return {'success': False, 'error': 'GEMINI_API_KEY must be configured'}
+        
+        print("Context:", context[:500])
 
         prompt = (
-            'Eres un experto en análisis de recetas. Extrae los campos en JSON y responde únicamente con JSON válido.\n\n'
+            "Eres un experto nutricionista y chef profesional. Analiza el JSON de contexto (título, descripción y transcripción) y genera un JSON válido con el siguiente formato exacto:\n"
+            "{\n"
+            "  \"titulo\": \"Título amigable para la receta\",\n"
+            "  \"descripcion\": \"Texto describiendo la receta basándote en la información disponible\",\n"
+            "  \"ingredientes\": [\"1. Ingrediente con cantidades\", \"2. Ingrediente\", ...],\n"
+            "  \"pasos\": [\"1. Paso detallado\", \"2. Paso detallado\", ...],\n"
+            "  \"tiempo_preparacion\": \"Tiempo aproximado en minutos u horas\",\n"
+            "  \"cantidad_final\": \"Rendimiento (porciones, peso o volumen)\",\n"
+            "  \"macronutrientes\": {\n"
+            "    \"kcal_totales\": numero,\n"
+            "    \"carbohidratos_gramos\": numero,\n"
+            "    \"proteinas_gramos\": numero,\n"
+            "    \"grasas_gramos\": numero,\n"
+            "    \"carbohidratos_porcentaje\": numero,\n"
+            "    \"proteinas_porcentaje\": numero,\n"
+            "    \"grasas_porcentaje\": numero\n"
+            "  }\n"
+            "}\n"
+            "Solo puedes responder con JSON válido. Calcula cantidades y porcentajes aproximados cuando no tengas datos exactos. Usa listas numeradas (\"1.\", \"2.\") en ingredientes y pasos.\n\n"
             + context
         )
 
@@ -189,11 +216,15 @@ class RecipeAnalyzer:
                 return {'success': False, 'error': perr or 'Failed to parse Gemini output to JSON'}
 
             recipe_data = parsed
-            required_fields = ['descripcion', 'ingredientes', 'pasos', 'tiempo_preparacion', 'cantidad_final', 'macronutrientes']
+            required_fields = ['titulo', 'descripcion', 'ingredientes', 'pasos', 'tiempo_preparacion', 'cantidad_final', 'macronutrientes']
             missing_fields = [field for field in required_fields if field not in recipe_data]
-            print('recipe_data:', recipe_data)
+            # print('recipe_data:', recipe_data)
             if missing_fields:
                 return {'success': False, 'error': f'La respuesta de la IA no contiene los campos requeridos: {", ".join(missing_fields)}'}
+
+            # Attach original metadata for traceability
+            recipe_data['uploader'] = uploader_val
+            recipe_data['platform'] = platform_val
 
             return {'success': True, 'recipe': recipe_data}
         except Exception as e:

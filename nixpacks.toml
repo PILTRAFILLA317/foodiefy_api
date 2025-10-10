@@ -11,9 +11,7 @@ nixPkgs = ["python312", "ffmpeg"]
 
 [phases.install]
 cmds = [
-  "python3 -m venv /app/.venv",
-  ". /app/.venv/bin/activate",
-  "pip install --no-cache-dir --only-binary=:all: -r requirements.txt"
+  "bash -c 'python3 -m venv /app/.venv && . /app/.venv/bin/activate && pip install --no-cache-dir -r requirements.txt'"
 ]
 
 [phases.build]

@@ -21,6 +21,7 @@ import tempfile
 import subprocess
 from urllib.parse import urlparse
 from dotenv import load_dotenv
+import signal
 load_dotenv()
 
 print("whisper module loaded")
@@ -28,10 +29,13 @@ print("whisper module loaded")
 
 app = FastAPI(title=settings.API_TITLE, version=settings.API_VERSION)
 api_router = APIRouter(prefix="/api", tags=["core"])
+
+
 class RecipeAnalyzer:
     def __init__(self):
         # Only Gemini with model gemini-2.0-flash is supported
-        self.gemini_key = os.getenv('GEMINI_API_KEY') or getattr(settings, 'GEMINI_API_KEY', None)
+        self.gemini_key = os.getenv('GEMINI_API_KEY') or getattr(
+            settings, 'GEMINI_API_KEY', None)
         # Use the requested default model
         self.model_name = 'gemini-2.0-flash'
         # httpx client kept for any low-level needs, but we won't use HTTP fallback
@@ -45,10 +49,14 @@ class RecipeAnalyzer:
         transcription = transcription_data.get('transcription', '')
         metadata = transcription_data.get('metadata', {})
 
-        title_val = metadata.get('title') or transcription_data.get('title') or 'Sin título'
-        description_val = metadata.get('description') or transcription_data.get('description') or 'Sin descripción'
-        uploader_val = metadata.get('uploader') or transcription_data.get('uploader') or 'Desconocido'
-        platform_val = metadata.get('platform') or transcription_data.get('platform') or 'Desconocida'
+        title_val = metadata.get('title') or transcription_data.get(
+            'title') or 'Sin título'
+        description_val = metadata.get('description') or transcription_data.get(
+            'description') or 'Sin descripción'
+        uploader_val = metadata.get('uploader') or transcription_data.get(
+            'uploader') or 'Desconocido'
+        platform_val = metadata.get('platform') or transcription_data.get(
+            'platform') or 'Desconocida'
 
         if not transcription:
             return {'success': False, 'error': 'Empty transcription'}
@@ -121,7 +129,8 @@ class RecipeAnalyzer:
                     m_name = (getattr(m, 'name', '') or '')
                     display = (getattr(m, 'display_name', '') or '')
                     # Normalize the candidate name pieces
-                    base_name = m_name.split('/')[-1] if '/' in m_name else m_name
+                    base_name = m_name.split(
+                        '/')[-1] if '/' in m_name else m_name
                     # Accept if the base name equals our model_name or display matches
                     if base_name == model_name or model_name == m_name or model_name in display:
                         actions = getattr(m, 'supported_actions', []) or []
@@ -144,7 +153,8 @@ class RecipeAnalyzer:
                 # Use the streaming content generator when available
                 try:
                     print('Using generate_content_stream...')
-                    stream = models_api.generate_content_stream(model=model_name, contents=prompt)
+                    stream = models_api.generate_content_stream(
+                        model=model_name, contents=prompt)
                     parts = []
                     for event in stream:
                         # event shape may vary; try several common attributes
@@ -154,16 +164,19 @@ class RecipeAnalyzer:
                             parts.append(event)
                             continue
                         piece = None
-                        piece = getattr(event, 'text', None) or getattr(event, 'content', None)
+                        piece = getattr(event, 'text', None) or getattr(
+                            event, 'content', None)
                         if piece is None:
                             delta = getattr(event, 'delta', None)
                             if delta is not None:
-                                piece = getattr(delta, 'content', None) or getattr(delta, 'text', None)
+                                piece = getattr(delta, 'content', None) or getattr(
+                                    delta, 'text', None)
                                 if hasattr(piece, 'text'):
                                     piece = getattr(piece, 'text')
                         if piece is None and hasattr(event, 'candidates') and event.candidates:
                             c0 = event.candidates[0]
-                            piece = getattr(c0, 'text', None) or getattr(c0, 'content', None) or getattr(c0, 'message', None)
+                            piece = getattr(c0, 'text', None) or getattr(
+                                c0, 'content', None) or getattr(c0, 'message', None)
                         if piece is None:
                             try:
                                 parts.append(str(event))
@@ -214,8 +227,10 @@ class RecipeAnalyzer:
                 return {'success': False, 'error': perr or 'Failed to parse Gemini output to JSON'}
 
             recipe_data = parsed
-            required_fields = ['titulo', 'descripcion', 'ingredientes', 'pasos', 'tiempo_preparacion', 'cantidad_final', 'macronutrientes']
-            missing_fields = [field for field in required_fields if field not in recipe_data]
+            required_fields = ['titulo', 'descripcion', 'ingredientes', 'pasos',
+                               'tiempo_preparacion', 'cantidad_final', 'macronutrientes']
+            missing_fields = [
+                field for field in required_fields if field not in recipe_data]
             # print('recipe_data:', recipe_data)
             if missing_fields:
                 return {'success': False, 'error': f'La respuesta de la IA no contiene los campos requeridos: {", ".join(missing_fields)}'}
@@ -236,7 +251,22 @@ class VideoTranscriber:
         # Load Whisper model at initialization (same behaviour as previous Flask app)
         # This will raise if whisper or torch are missing so failures surface early.
         try:
-            self.whisper_model = whisper.load_model("tiny", device="cpu")
+            # Load with a watchdog timeout (seconds configurable via WHISPER_LOAD_TIMEOUT env, default 30)
+            print("Loading Whisper model...")
+            timeout_sec = int(os.getenv('WHISPER_LOAD_TIMEOUT', '30'))
+
+            def _whisper_timeout_handler(signum, frame):
+                raise TimeoutError(
+                    f"Whisper model load timed out after {timeout_sec} seconds")
+
+            prev_handler = signal.signal(
+                signal.SIGALRM, _whisper_timeout_handler)
+            try:
+                signal.alarm(timeout_sec)
+                self.whisper_model = whisper.load_model("tiny", device="cpu")
+            finally:
+                signal.alarm(0)
+                signal.signal(signal.SIGALRM, prev_handler)
         except Exception as e:
             # Re-raise with clearer message
             raise RuntimeError(f"Failed to load Whisper model: {e}")
@@ -247,7 +277,21 @@ class VideoTranscriber:
                 "whisper package is not installed in the environment")
         if self.whisper_model is None:
             # load model lazily; use cpu by default
-            self.whisper_model = whisper.load_model("tiny", device="cpu")
+            # Load with a watchdog timeout (seconds configurable via WHISPER_LOAD_TIMEOUT env, default 30)
+            timeout_sec = int(os.getenv('WHISPER_LOAD_TIMEOUT', '30'))
+
+            def _whisper_timeout_handler(signum, frame):
+                raise TimeoutError(
+                    f"Whisper model load timed out after {timeout_sec} seconds")
+
+            prev_handler = signal.signal(
+                signal.SIGALRM, _whisper_timeout_handler)
+            try:
+                signal.alarm(timeout_sec)
+                self.whisper_model = whisper.load_model("tiny", device="cpu")
+            finally:
+                signal.alarm(0)
+                signal.signal(signal.SIGALRM, prev_handler)
 
     def extract_platform(self, url: str) -> str:
         domain = urlparse(url).netloc.lower()
@@ -408,6 +452,7 @@ async def analyze_recipe_endpoint(request: Request):
         raise HTTPException(status_code=400, detail='Invalid URL format')
 
     try:
+        print('Downloading and transcribing from URL')
         result = transcriber.download_audio(url)
     except Exception as e:
         return JSONResponse({'success': False, 'error': str(e)}, status_code=500)
@@ -428,6 +473,7 @@ async def analyze_recipe_endpoint(request: Request):
         }
 
     if analyze_recipe_flag:
+        print('Analyzing recipe with Gemini...')
         analysis_data = {
             'transcription': result['transcription'],
             'metadata': {
@@ -437,80 +483,12 @@ async def analyze_recipe_endpoint(request: Request):
         }
         recipe_result = recipe_analyzer.analyze_recipe(analysis_data)
         response['recipe_analysis'] = recipe_result
+        return JSONResponse(result)
 
     # print('analysis_data:', analysis_data)
+    print('Response:', response)
     result = recipe_analyzer.analyze_recipe(result)
     return JSONResponse(result)
-
-
-@api_router.post('/debug-platform')
-async def debug_platform(request: Request):
-    try:
-        data = await request.json()
-    except Exception:
-        data = None
-
-    if not data or 'url' not in data:
-        raise HTTPException(status_code=400, detail='Missing url')
-
-    url = data['url']
-    platform = transcriber.extract_platform(url)
-
-    if yt_dlp is None:
-        return JSONResponse({'success': False, 'error': 'yt_dlp not installed'}, status_code=500)
-
-    with tempfile.TemporaryDirectory() as temp_dir:
-        if platform == 'facebook':
-            ydl_opts = transcriber.get_facebook_ydl_opts(temp_dir)
-        elif platform == 'tiktok':
-            ydl_opts = transcriber.get_tiktok_ydl_opts(temp_dir)
-        else:
-            ydl_opts = transcriber.get_default_ydl_opts(temp_dir)
-
-        # Remove postprocessors for debug
-        ydl_opts.pop('postprocessors', None)
-
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(url, download=False)
-
-        return JSONResponse({
-            'success': True,
-            'platform': platform,
-            'title': info.get('title'),
-            'duration': info.get('duration'),
-            'uploader': info.get('uploader')
-        })
-
-
-@api_router.get('/supported-platforms')
-def supported_platforms():
-    return JSONResponse({
-        'supported_platforms': [
-            'YouTube Shorts',
-            'TikTok',
-            'Instagram Reels',
-            'Facebook Videos and Reels'
-        ],
-        'supported_urls': {
-            'youtube': [
-                'https://www.youtube.com/shorts/VIDEO_ID',
-                'https://youtu.be/VIDEO_ID'
-            ],
-            'tiktok': [
-                'https://www.tiktok.com/@user/video/VIDEO_ID'
-            ],
-            'instagram': [
-                'https://www.instagram.com/reel/REEL_ID/',
-                'https://www.instagram.com/p/POST_ID/'
-            ],
-            'facebook': [
-                'https://www.facebook.com/watch/?v=VIDEO_ID',
-                'https://www.facebook.com/reel/REEL_ID',
-                'https://fb.watch/VIDEO_ID'
-            ]
-        },
-        'note': 'API supports any platform compatible with yt-dlp'
-    })
 
 
 @api_router.get('/health')

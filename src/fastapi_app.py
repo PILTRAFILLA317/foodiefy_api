@@ -415,8 +415,10 @@ class VideoTranscriber:
                 raise Exception("No audio file found after download")
 
             # Transcribe using whisper (lazy load)
+            print("Transcribing audio with Whisper...")
             self._ensure_whisper()
             result = self.whisper_model.transcribe(audio_file, fp16=False)
+            print("Transcription completed.")
 
             return {
                 'transcription': result.get('text', '').strip(),
@@ -454,6 +456,7 @@ async def analyze_recipe_endpoint(request: Request):
     try:
         print('Downloading and transcribing from URL')
         result = transcriber.download_audio(url)
+        print('Transcription result obtained')
     except Exception as e:
         return JSONResponse({'success': False, 'error': str(e)}, status_code=500)
 

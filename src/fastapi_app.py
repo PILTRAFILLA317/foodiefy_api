@@ -236,7 +236,7 @@ class VideoTranscriber:
         # Load Whisper model at initialization (same behaviour as previous Flask app)
         # This will raise if whisper or torch are missing so failures surface early.
         try:
-            self.whisper_model = whisper.load_model("base", device="cpu")
+            self.whisper_model = whisper.load_model("tiny", device="cpu")
         except Exception as e:
             # Re-raise with clearer message
             raise RuntimeError(f"Failed to load Whisper model: {e}")
@@ -247,7 +247,7 @@ class VideoTranscriber:
                 "whisper package is not installed in the environment")
         if self.whisper_model is None:
             # load model lazily; use cpu by default
-            self.whisper_model = whisper.load_model("base", device="cpu")
+            self.whisper_model = whisper.load_model("tiny", device="cpu")
 
     def extract_platform(self, url: str) -> str:
         domain = urlparse(url).netloc.lower()
@@ -440,7 +440,6 @@ async def analyze_recipe_endpoint(request: Request):
 
     # print('analysis_data:', analysis_data)
     result = recipe_analyzer.analyze_recipe(result)
-    print('result:', result)
     return JSONResponse(result)
 
 

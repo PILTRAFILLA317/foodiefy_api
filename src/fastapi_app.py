@@ -80,8 +80,6 @@ class RecipeAnalyzer:
 
         if not self.gemini_key:
             return {'success': False, 'error': 'GEMINI_API_KEY must be configured'}
-        
-        print("Context:", context[:500])
 
         prompt = (
             "Eres un experto nutricionista y chef profesional. Analiza el JSON de contexto (título, descripción y transcripción) y genera un JSON válido con el siguiente formato exacto:\n"

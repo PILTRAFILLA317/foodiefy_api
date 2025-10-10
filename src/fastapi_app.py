@@ -367,6 +367,27 @@ class VideoTranscriber:
                     return file_path
         return None
 
+    def preprocess_audio(self, audio_path: str, temp_dir: str):
+        try:
+            target_path = os.path.join(temp_dir, "preprocessed_audio.wav")
+            max_duration = int(os.getenv('AUDIO_MAX_DURATION', '90'))
+            cmd = [
+                "ffmpeg", "-y", "-i", audio_path,
+                "-ar", "16000",
+                "-ac", "1",
+                "-acodec", "pcm_s16le",
+                "-loglevel", "error"
+            ]
+            if max_duration > 0:
+                # Insert duration limit before output file
+                cmd.extend(["-t", str(max_duration)])
+            cmd.append(target_path)
+            subprocess.run(cmd, check=True, capture_output=True)
+            return target_path if os.path.exists(target_path) else audio_path
+        except Exception as e:
+            print(f"Audio preprocessing failed: {e}")
+            return audio_path
+
     def extract_audio_from_video(self, video_file: str, temp_dir: str):
         try:
             audio_file = os.path.join(temp_dir, "extracted_audio.wav")
@@ -416,11 +437,21 @@ class VideoTranscriber:
             if not audio_file or not os.path.exists(audio_file):
                 raise Exception("No audio file found after download")
 
+            # Pre-process audio to reduce workload (duration cap + resample)
+            audio_file = self.preprocess_audio(audio_file, temp_dir)
+
             # Transcribe using whisper (lazy load)
             print("Transcribing audio with Whisper...")
             self._ensure_whisper()
             print("Whisper debug 3")
-            result = self.whisper_model.transcribe(audio_file)
+            result = self.whisper_model.transcribe(
+                audio_file,
+                fp16=False,
+                beam_size=1,
+                best_of=1,
+                condition_on_previous_text=False,
+                temperature=0.0
+            )
             print("Transcription completed.")
 
             return {

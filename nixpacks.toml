@@ -13,7 +13,6 @@ nixPkgs = ["python312", "ffmpeg"]
 cmds = [
   "python3 -m venv /app/.venv",
   ". /app/.venv/bin/activate",
-  "pip install --no-cache-dir --upgrade pip",
   "pip install --no-cache-dir --only-binary=:all: -r requirements.txt"
 ]
 

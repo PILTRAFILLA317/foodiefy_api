@@ -57,6 +57,8 @@ class RecipeAnalyzer:
             'uploader') or 'Desconocido'
         platform_val = metadata.get('platform') or transcription_data.get(
             'platform') or 'Desconocida'
+        thumbnail_val = metadata.get('thumbnail') or transcription_data.get(
+            'thumbnail') or ''
 
         if not transcription:
             return {'success': False, 'error': 'Empty transcription'}
@@ -67,6 +69,7 @@ class RecipeAnalyzer:
             f"Descripción: {description_val}\n"
             f"Plataforma: {platform_val}\n"
             f"Creador: {uploader_val}\n"
+            f"Miniatura: {thumbnail_val}\n"
             f"Transcripción: {transcription}"
         )
 
@@ -92,11 +95,11 @@ class RecipeAnalyzer:
         prompt = (
             "Eres un experto nutricionista y chef profesional. Analiza el JSON de contexto (título, descripción y transcripción) y genera un JSON válido con el siguiente formato exacto:\n"
             "{\n"
-            "  \"titulo\": \"Título amigable para la receta\",\n"
+            "  \"titulo\": \"Título corto amigable para la receta\",\n"
             "  \"descripcion\": \"Texto describiendo la receta basándote en la información disponible\",\n"
-            "  \"ingredientes\": [\"1. Ingrediente con cantidades\", \"2. Ingrediente\", ...],\n"
-            "  \"pasos\": [\"1. Paso detallado\", \"2. Paso detallado\", ...],\n"
-            "  \"tiempo_preparacion\": \"Tiempo aproximado en minutos u horas\",\n"
+            "  \"ingredientes\": [\"Ingrediente con cantidades\", \"Ingrediente\", ...],\n"
+            "  \"pasos\": [\"Paso detallado\", \"Paso detallado\", ...],\n"
+            "  \"tiempo_preparacion\": \"Tiempo aproximado en minutos\",\n"
             "  \"cantidad_final\": \"Rendimiento (porciones, peso o volumen)\",\n"
             "  \"macronutrientes\": {\n"
             "    \"kcal_totales\": numero,\n"
@@ -108,7 +111,7 @@ class RecipeAnalyzer:
             "    \"grasas_porcentaje\": numero\n"
             "  }\n"
             "}\n"
-            "Solo puedes responder con JSON válido. Calcula cantidades y porcentajes aproximados cuando no tengas datos exactos. Usa listas numeradas (\"1.\", \"2.\") en ingredientes y pasos.\n\n"
+            "Solo puedes responder con JSON válido. Calcula cantidades y porcentajes aproximados cuando no tengas datos exactos. Usa listas sin numerar (\"1.\", \"2.\") en ingredientes y pasos. Aunque la receta se separe en varias partes (galleta y relleno por ejemplo) no separes los ingredientes, devuelve la liste de todos los ingredientes seguidos. El vídeo no es una receta o no incluye los datos mínimos para esta tarea, devuelve un error \n\n"
             + context
         )
 
@@ -238,6 +241,8 @@ class RecipeAnalyzer:
             # Attach original metadata for traceability
             recipe_data['uploader'] = uploader_val
             recipe_data['platform'] = platform_val
+            if thumbnail_val:
+                recipe_data['thumbnail'] = thumbnail_val
 
             return {'success': True, 'recipe': recipe_data}
         except Exception as e:
@@ -367,6 +372,24 @@ class VideoTranscriber:
                     return file_path
         return None
 
+    def _extract_thumbnail(self, info: dict):
+        if not info:
+            return None
+        thumb = info.get('thumbnail')
+        if thumb:
+            return thumb
+        thumbs = info.get('thumbnails') or []
+        if isinstance(thumbs, list) and thumbs:
+            # pick highest resolution available
+            sorted_thumbs = sorted(
+                [t for t in thumbs if isinstance(t, dict) and t.get('url')],
+                key=lambda t: (t.get('width', 0) or 0) * (t.get('height', 0) or 0),
+                reverse=True
+            )
+            if sorted_thumbs:
+                return sorted_thumbs[0].get('url')
+        return None
+
     def preprocess_audio(self, audio_path: str, temp_dir: str):
         try:
             target_path = os.path.join(temp_dir, "preprocessed_audio.wav")
@@ -460,6 +483,7 @@ class VideoTranscriber:
                 'description': info.get('description', ''),
                 # 'duration': info.get('duration', 0),
                 'uploader': info.get('uploader', ''),
+                'thumbnail': self._extract_thumbnail(info),
                 # 'view_count': info.get('view_count', 0),
                 'platform': platform
             }
@@ -506,6 +530,7 @@ async def analyze_recipe_endpoint(request: Request):
             'description': result.get('description', ''),
             # 'duration': result.get('duration', 0),
             'uploader': result.get('uploader', ''),
+            'thumbnail': result.get('thumbnail', ''),
             # 'view_count': result.get('view_count', 0)
         }
 
@@ -515,7 +540,10 @@ async def analyze_recipe_endpoint(request: Request):
             'transcription': result['transcription'],
             'metadata': {
                 'title': result.get('title', ''),
-                'description': result.get('description', '')
+                'description': result.get('description', ''),
+                'thumbnail': result.get('thumbnail', ''),
+                'uploader': result.get('uploader', ''),
+                'platform': result.get('platform', '')
             }
         }
         recipe_result = recipe_analyzer.analyze_recipe(analysis_data)

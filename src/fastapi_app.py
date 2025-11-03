@@ -281,7 +281,6 @@ class VideoTranscriber:
             raise RuntimeError(
                 "whisper package is not installed in the environment")
         if self.whisper_model is None:
-            print("Whisper debug.")
             # load model lazily; use cpu by default
             # Load with a watchdog timeout (seconds configurable via WHISPER_LOAD_TIMEOUT env, default 30)
             timeout_sec = int(os.getenv('WHISPER_LOAD_TIMEOUT', '30'))
@@ -298,7 +297,6 @@ class VideoTranscriber:
             finally:
                 signal.alarm(0)
                 signal.signal(signal.SIGALRM, prev_handler)
-        print("Whisper debug 2")
 
     def extract_platform(self, url: str) -> str:
         domain = urlparse(url).netloc.lower()
@@ -375,19 +373,20 @@ class VideoTranscriber:
     def _extract_thumbnail(self, info: dict):
         if not info:
             return None
-        thumb = info.get('thumbnail')
-        if thumb:
-            return thumb
         thumbs = info.get('thumbnails') or []
         if isinstance(thumbs, list) and thumbs:
             # pick highest resolution available
             sorted_thumbs = sorted(
                 [t for t in thumbs if isinstance(t, dict) and t.get('url')],
-                key=lambda t: (t.get('width', 0) or 0) * (t.get('height', 0) or 0),
+                key=lambda t: (t.get('width', 0) or 0) *
+                (t.get('height', 0) or 0),
                 reverse=True
             )
             if sorted_thumbs:
                 return sorted_thumbs[0].get('url')
+        thumb = info.get('thumbnail')
+        if thumb:
+            return thumb
         return None
 
     def preprocess_audio(self, audio_path: str, temp_dir: str):
@@ -466,7 +465,6 @@ class VideoTranscriber:
             # Transcribe using whisper (lazy load)
             print("Transcribing audio with Whisper...")
             self._ensure_whisper()
-            print("Whisper debug 3")
             result = self.whisper_model.transcribe(
                 audio_file,
                 fp16=False,
@@ -551,8 +549,9 @@ async def analyze_recipe_endpoint(request: Request):
         return JSONResponse(result)
 
     # print('analysis_data:', analysis_data)
-    print('Response:', response)
+    # print('Response:', response)
     result = recipe_analyzer.analyze_recipe(result)
+    print('RESULT:', result)
     return JSONResponse(result)
 
 

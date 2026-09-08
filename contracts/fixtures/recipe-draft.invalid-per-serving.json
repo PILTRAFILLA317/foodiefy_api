@@ -1,0 +1,52 @@
+{
+  "schema_version": "1.0",
+  "title": "Nutrición sin raciones",
+  "description": null,
+  "source": {
+    "url": "https://example.com/nutricion",
+    "canonical_url": null,
+    "platform": "web",
+    "creator": null,
+    "source_kind": "web_page"
+  },
+  "ingredients": [
+    {
+      "position": 1,
+      "raw_text": "1 manzana",
+      "name": "manzana",
+      "quantity": 1,
+      "quantity_max": null,
+      "unit": "unidad",
+      "preparation": null,
+      "group": null,
+      "evidence_source": "source_text",
+      "is_estimated": false
+    }
+  ],
+  "steps": [
+    {
+      "position": 1,
+      "text": "Cortar.",
+      "duration_seconds": null,
+      "temperature_c": null,
+      "source_timestamp_seconds": null
+    }
+  ],
+  "prep_minutes": null,
+  "cook_minutes": null,
+  "total_minutes": null,
+  "servings": null,
+  "yield_text": null,
+  "nutrition": {
+    "basis": "per_serving",
+    "kcal": 80,
+    "protein_g": null,
+    "carbs_g": null,
+    "fat_g": null,
+    "method": "source_label",
+    "assumptions": [],
+    "status": "partial",
+    "known_mass_g": null
+  },
+  "warnings": []
+}

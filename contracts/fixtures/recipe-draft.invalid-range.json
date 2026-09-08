@@ -1,0 +1,42 @@
+{
+  "schema_version": "1.0",
+  "title": "Rango invertido",
+  "description": null,
+  "source": {
+    "url": "https://example.com/rango",
+    "canonical_url": null,
+    "platform": "web",
+    "creator": null,
+    "source_kind": "web_page"
+  },
+  "ingredients": [
+    {
+      "position": 1,
+      "raw_text": "2-1 cucharadas de aceite",
+      "name": "aceite",
+      "quantity": 2,
+      "quantity_max": 1,
+      "unit": "cucharada",
+      "preparation": null,
+      "group": null,
+      "evidence_source": "source_text",
+      "is_estimated": false
+    }
+  ],
+  "steps": [
+    {
+      "position": 1,
+      "text": "Mezclar.",
+      "duration_seconds": null,
+      "temperature_c": null,
+      "source_timestamp_seconds": null
+    }
+  ],
+  "prep_minutes": null,
+  "cook_minutes": null,
+  "total_minutes": null,
+  "servings": null,
+  "yield_text": null,
+  "nutrition": null,
+  "warnings": []
+}

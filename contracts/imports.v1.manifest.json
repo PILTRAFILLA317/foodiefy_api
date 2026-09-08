@@ -1,0 +1,6 @@
+{
+  "contract": "imports",
+  "schema_file": "imports.v1.schema.json",
+  "schema_sha256": "96bf88da474f658d88326e6bb9be44852453679b56db3414b11e3a15eb387bc2",
+  "schema_version": "1.0"
+}

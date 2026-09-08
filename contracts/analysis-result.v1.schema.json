@@ -1,0 +1,747 @@
+{
+  "$defs": {
+    "Conflict": {
+      "additionalProperties": false,
+      "properties": {
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/FieldEvidence"
+          },
+          "title": "Evidence",
+          "type": "array"
+        },
+        "field_path": {
+          "title": "Field Path",
+          "type": "string"
+        }
+      },
+      "required": [
+        "field_path",
+        "evidence"
+      ],
+      "title": "Conflict",
+      "type": "object"
+    },
+    "EvidenceSource": {
+      "enum": [
+        "source_text",
+        "source_audio",
+        "source_metadata",
+        "source_visual",
+        "manual",
+        "ai_inference"
+      ],
+      "title": "EvidenceSource",
+      "type": "string"
+    },
+    "FieldEvidence": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Artifact Id"
+        },
+        "field_path": {
+          "title": "Field Path",
+          "type": "string"
+        },
+        "quote": {
+          "maxLength": 500,
+          "title": "Quote",
+          "type": "string"
+        },
+        "source_kind": {
+          "enum": [
+            "description",
+            "manual_subtitles",
+            "auto_subtitles",
+            "transcript",
+            "html",
+            "json_ld",
+            "metadata",
+            "visual"
+          ],
+          "title": "Source Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "field_path",
+        "source_kind",
+        "quote",
+        "artifact_id"
+      ],
+      "title": "FieldEvidence",
+      "type": "object"
+    },
+    "Ingredient": {
+      "additionalProperties": false,
+      "properties": {
+        "evidence_source": {
+          "$ref": "#/$defs/EvidenceSource"
+        },
+        "group": {
+          "anyOf": [
+            {
+              "maxLength": 10000,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Group"
+        },
+        "is_estimated": {
+          "title": "Is Estimated",
+          "type": "boolean"
+        },
+        "name": {
+          "maxLength": 10000,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "position": {
+          "minimum": 1,
+          "title": "Position",
+          "type": "integer"
+        },
+        "preparation": {
+          "anyOf": [
+            {
+              "maxLength": 10000,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Preparation"
+        },
+        "quantity": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,12}|(?=[\\d.]{1,19}0*$)\\d{0,12}\\.\\d{0,6}0*$)",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Quantity"
+        },
+        "quantity_max": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,12}|(?=[\\d.]{1,19}0*$)\\d{0,12}\\.\\d{0,6}0*$)",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Quantity Max"
+        },
+        "raw_text": {
+          "maxLength": 10000,
+          "minLength": 1,
+          "title": "Raw Text",
+          "type": "string"
+        },
+        "unit": {
+          "anyOf": [
+            {
+              "maxLength": 10000,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Unit"
+        }
+      },
+      "required": [
+        "position",
+        "raw_text",
+        "name",
+        "quantity",
+        "quantity_max",
+        "unit",
+        "preparation",
+        "group",
+        "evidence_source",
+        "is_estimated"
+      ],
+      "title": "Ingredient",
+      "type": "object"
+    },
+    "NutritionBasis": {
+      "enum": [
+        "whole_recipe",
+        "per_serving",
+        "per_100g"
+      ],
+      "title": "NutritionBasis",
+      "type": "string"
+    },
+    "NutritionEstimate": {
+      "additionalProperties": false,
+      "properties": {
+        "assumptions": {
+          "items": {
+            "maxLength": 10000,
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Assumptions",
+          "type": "array"
+        },
+        "basis": {
+          "$ref": "#/$defs/NutritionBasis"
+        },
+        "carbs_g": {
+          "anyOf": [
+            {
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,12}|(?=[\\d.]{1,19}0*$)\\d{0,12}\\.\\d{0,6}0*$)",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Carbs G"
+        },
+        "fat_g": {
+          "anyOf": [
+            {
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,12}|(?=[\\d.]{1,19}0*$)\\d{0,12}\\.\\d{0,6}0*$)",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Fat G"
+        },
+        "kcal": {
+          "anyOf": [
+            {
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,12}|(?=[\\d.]{1,19}0*$)\\d{0,12}\\.\\d{0,6}0*$)",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Kcal"
+        },
+        "known_mass_g": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,12}|(?=[\\d.]{1,19}0*$)\\d{0,12}\\.\\d{0,6}0*$)",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Known Mass G"
+        },
+        "method": {
+          "$ref": "#/$defs/NutritionMethod"
+        },
+        "protein_g": {
+          "anyOf": [
+            {
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,12}|(?=[\\d.]{1,19}0*$)\\d{0,12}\\.\\d{0,6}0*$)",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Protein G"
+        },
+        "status": {
+          "$ref": "#/$defs/NutritionStatus"
+        }
+      },
+      "required": [
+        "basis",
+        "kcal",
+        "protein_g",
+        "carbs_g",
+        "fat_g",
+        "method",
+        "assumptions",
+        "status",
+        "known_mass_g"
+      ],
+      "title": "NutritionEstimate",
+      "type": "object"
+    },
+    "NutritionMethod": {
+      "enum": [
+        "source_label",
+        "calculated",
+        "ai_estimate",
+        "manual"
+      ],
+      "title": "NutritionMethod",
+      "type": "string"
+    },
+    "NutritionStatus": {
+      "enum": [
+        "complete",
+        "partial",
+        "unavailable"
+      ],
+      "title": "NutritionStatus",
+      "type": "string"
+    },
+    "RecipeDraft": {
+      "additionalProperties": false,
+      "description": "Unpersisted extraction output; intentionally has no identity or owner.",
+      "properties": {
+        "cook_minutes": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Cook Minutes"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "maxLength": 10000,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Description"
+        },
+        "ingredients": {
+          "items": {
+            "$ref": "#/$defs/Ingredient"
+          },
+          "minItems": 1,
+          "title": "Ingredients",
+          "type": "array"
+        },
+        "nutrition": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/NutritionEstimate"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "prep_minutes": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Prep Minutes"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "servings": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,12}|(?=[\\d.]{1,19}0*$)\\d{0,12}\\.\\d{0,6}0*$)",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Servings"
+        },
+        "source": {
+          "$ref": "#/$defs/RecipeSource"
+        },
+        "steps": {
+          "items": {
+            "$ref": "#/$defs/Step"
+          },
+          "minItems": 1,
+          "title": "Steps",
+          "type": "array"
+        },
+        "title": {
+          "maxLength": 10000,
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "total_minutes": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Total Minutes"
+        },
+        "warnings": {
+          "items": {
+            "maxLength": 10000,
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Warnings",
+          "type": "array"
+        },
+        "yield_text": {
+          "anyOf": [
+            {
+              "maxLength": 10000,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Yield Text"
+        }
+      },
+      "required": [
+        "schema_version",
+        "title",
+        "description",
+        "source",
+        "ingredients",
+        "steps",
+        "prep_minutes",
+        "cook_minutes",
+        "total_minutes",
+        "servings",
+        "yield_text",
+        "nutrition",
+        "warnings"
+      ],
+      "title": "RecipeDraft",
+      "type": "object"
+    },
+    "RecipeSource": {
+      "additionalProperties": false,
+      "properties": {
+        "canonical_url": {
+          "anyOf": [
+            {
+              "format": "uri",
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Canonical Url"
+        },
+        "creator": {
+          "anyOf": [
+            {
+              "maxLength": 10000,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Creator"
+        },
+        "platform": {
+          "anyOf": [
+            {
+              "maxLength": 10000,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Platform"
+        },
+        "source_kind": {
+          "$ref": "#/$defs/SourceKind"
+        },
+        "url": {
+          "anyOf": [
+            {
+              "format": "uri",
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Url"
+        }
+      },
+      "required": [
+        "url",
+        "canonical_url",
+        "platform",
+        "creator",
+        "source_kind"
+      ],
+      "title": "RecipeSource",
+      "type": "object"
+    },
+    "SourceKind": {
+      "enum": [
+        "web_page",
+        "social_post",
+        "video",
+        "manual"
+      ],
+      "title": "SourceKind",
+      "type": "string"
+    },
+    "Step": {
+      "additionalProperties": false,
+      "properties": {
+        "duration_seconds": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Duration Seconds"
+        },
+        "position": {
+          "minimum": 1,
+          "title": "Position",
+          "type": "integer"
+        },
+        "source_timestamp_seconds": {
+          "anyOf": [
+            {
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,12}|(?=[\\d.]{1,19}0*$)\\d{0,12}\\.\\d{0,6}0*$)",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Source Timestamp Seconds"
+        },
+        "temperature_c": {
+          "anyOf": [
+            {
+              "maximum": 500.0,
+              "minimum": -100.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,4}|(?=[\\d.]{1,7}0*$)\\d{0,4}\\.\\d{0,2}0*$)",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Temperature C"
+        },
+        "text": {
+          "maxLength": 10000,
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "position",
+        "text",
+        "duration_seconds",
+        "temperature_c",
+        "source_timestamp_seconds"
+      ],
+      "title": "Step",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "analysis_status": {
+      "enum": [
+        "recipe",
+        "partial",
+        "no_recipe"
+      ],
+      "title": "Analysis Status",
+      "type": "string"
+    },
+    "confidence": {
+      "anyOf": [
+        {
+          "maximum": 1,
+          "minimum": 0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Confidence"
+    },
+    "confidence_explanation": {
+      "title": "Confidence Explanation",
+      "type": "string"
+    },
+    "conflicts": {
+      "items": {
+        "$ref": "#/$defs/Conflict"
+      },
+      "title": "Conflicts",
+      "type": "array"
+    },
+    "field_evidence": {
+      "items": {
+        "$ref": "#/$defs/FieldEvidence"
+      },
+      "title": "Field Evidence",
+      "type": "array"
+    },
+    "missing_information": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Missing Information",
+      "type": "array"
+    },
+    "recipe": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/RecipeDraft"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "schema_version": {
+      "const": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "visual_evidence_reasons": {
+      "items": {
+        "enum": [
+          "on_screen_quantities",
+          "no_useful_narration",
+          "incomplete_vs_metadata",
+          "ocr_frame_hint",
+          "predominantly_visual"
+        ],
+        "type": "string"
+      },
+      "title": "Visual Evidence Reasons",
+      "type": "array"
+    },
+    "visual_evidence_required": {
+      "title": "Visual Evidence Required",
+      "type": "boolean"
+    },
+    "warnings": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Warnings",
+      "type": "array"
+    }
+  },
+  "required": [
+    "schema_version",
+    "analysis_status",
+    "recipe",
+    "confidence",
+    "confidence_explanation",
+    "warnings",
+    "missing_information",
+    "visual_evidence_required",
+    "visual_evidence_reasons",
+    "field_evidence",
+    "conflicts"
+  ],
+  "title": "AnalysisResult",
+  "type": "object"
+}

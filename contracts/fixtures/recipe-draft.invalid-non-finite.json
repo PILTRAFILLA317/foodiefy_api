@@ -1,0 +1,42 @@
+{
+  "schema_version": "1.0",
+  "title": "Cantidad no finita",
+  "description": null,
+  "source": {
+    "url": "https://example.com/no-finito",
+    "canonical_url": null,
+    "platform": "web",
+    "creator": null,
+    "source_kind": "web_page"
+  },
+  "ingredients": [
+    {
+      "position": 1,
+      "raw_text": "Cantidad desconocida",
+      "name": "ingrediente",
+      "quantity": "NaN",
+      "quantity_max": null,
+      "unit": null,
+      "preparation": null,
+      "group": null,
+      "evidence_source": "ai_inference",
+      "is_estimated": true
+    }
+  ],
+  "steps": [
+    {
+      "position": 1,
+      "text": "Mezclar.",
+      "duration_seconds": null,
+      "temperature_c": null,
+      "source_timestamp_seconds": null
+    }
+  ],
+  "prep_minutes": null,
+  "cook_minutes": null,
+  "total_minutes": null,
+  "servings": null,
+  "yield_text": null,
+  "nutrition": null,
+  "warnings": []
+}

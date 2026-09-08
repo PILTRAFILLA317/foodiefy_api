@@ -1,0 +1,73 @@
+{
+  "schema_version": "1.0",
+  "title": "Tortilla de patata",
+  "description": "Receta familiar con cantidades indicadas en la fuente.",
+  "source": {
+    "url": "https://example.com/videos/tortilla",
+    "canonical_url": "https://example.com/recipes/tortilla",
+    "platform": "example",
+    "creator": "Cocina de prueba",
+    "source_kind": "video"
+  },
+  "ingredients": [
+    {
+      "position": 1,
+      "raw_text": "1.5 kg de patatas",
+      "name": "patatas",
+      "quantity": 1.5,
+      "quantity_max": null,
+      "unit": "kg",
+      "preparation": "peladas",
+      "group": null,
+      "evidence_source": "source_text",
+      "is_estimated": false
+    },
+    {
+      "position": 2,
+      "raw_text": "6 huevos",
+      "name": "huevos",
+      "quantity": 6,
+      "quantity_max": null,
+      "unit": "unidad",
+      "preparation": null,
+      "group": null,
+      "evidence_source": "source_audio",
+      "is_estimated": false
+    }
+  ],
+  "steps": [
+    {
+      "position": 1,
+      "text": "Pochar las patatas.",
+      "duration_seconds": null,
+      "temperature_c": null,
+      "source_timestamp_seconds": 12.5
+    },
+    {
+      "position": 2,
+      "text": "Mezclar con los huevos y cuajar.",
+      "duration_seconds": null,
+      "temperature_c": null,
+      "source_timestamp_seconds": 44
+    }
+  ],
+  "prep_minutes": 15,
+  "cook_minutes": 30,
+  "total_minutes": 45,
+  "servings": 4,
+  "yield_text": "1 tortilla",
+  "nutrition": {
+    "basis": "whole_recipe",
+    "kcal": 2100.5,
+    "protein_g": 78.25,
+    "carbs_g": 265.75,
+    "fat_g": null,
+    "method": "source_label",
+    "assumptions": [],
+    "status": "partial",
+    "known_mass_g": null
+  },
+  "warnings": [
+    "La fuente no indica temperatura ni duración exacta de cuajado."
+  ]
+}

@@ -1,0 +1,1 @@
+Fixtures sintéticos escritos para Fase 05; sin contenido de terceros, credenciales ni llamadas de IA. Los dominios example.org identifican recursos de prueba y se interceptan en los tests. No acreditan soporte real de ninguna plataforma.

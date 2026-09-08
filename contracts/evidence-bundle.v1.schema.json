@@ -1,0 +1,514 @@
+{
+  "$defs": {
+    "Fragment": {
+      "additionalProperties": false,
+      "properties": {
+        "format": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Format"
+        },
+        "language": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Language"
+        },
+        "original_chars": {
+          "minimum": 0,
+          "title": "Original Chars",
+          "type": "integer"
+        },
+        "raw_text": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Raw Text"
+        },
+        "source_kind": {
+          "enum": [
+            "description",
+            "manual_subtitles",
+            "auto_subtitles",
+            "html",
+            "json_ld",
+            "metadata"
+          ],
+          "title": "Source Kind",
+          "type": "string"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        },
+        "truncated": {
+          "default": false,
+          "title": "Truncated",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "source_kind",
+        "text",
+        "original_chars"
+      ],
+      "title": "Fragment",
+      "type": "object"
+    },
+    "MediaReference": {
+      "additionalProperties": false,
+      "properties": {
+        "duration_seconds": {
+          "exclusiveMinimum": 0,
+          "title": "Duration Seconds",
+          "type": "number"
+        },
+        "expires_with_job": {
+          "const": true,
+          "default": true,
+          "title": "Expires With Job",
+          "type": "boolean"
+        },
+        "filename": {
+          "pattern": "^[a-z0-9_-]+\\.[a-z0-9]+$",
+          "title": "Filename",
+          "type": "string"
+        },
+        "mime_type": {
+          "title": "Mime Type",
+          "type": "string"
+        },
+        "size_bytes": {
+          "minimum": 1,
+          "title": "Size Bytes",
+          "type": "integer"
+        },
+        "source_kind": {
+          "enum": [
+            "audio",
+            "video"
+          ],
+          "title": "Source Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_kind",
+        "filename",
+        "mime_type",
+        "size_bytes",
+        "duration_seconds"
+      ],
+      "title": "MediaReference",
+      "type": "object"
+    },
+    "RecipeEvidence": {
+      "additionalProperties": false,
+      "properties": {
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "durations_iso8601": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Durations Iso8601",
+          "type": "object"
+        },
+        "durations_seconds": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "title": "Durations Seconds",
+          "type": "object"
+        },
+        "ingredients": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Ingredients",
+          "type": "array"
+        },
+        "instructions": {
+          "items": {
+            "$ref": "#/$defs/Step"
+          },
+          "title": "Instructions",
+          "type": "array"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Name"
+        },
+        "nutrition": {
+          "additionalProperties": true,
+          "title": "Nutrition",
+          "type": "object"
+        },
+        "raw": {
+          "additionalProperties": true,
+          "title": "Raw",
+          "type": "object"
+        },
+        "recipe_yield": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Recipe Yield"
+        },
+        "source_kind": {
+          "const": "json_ld",
+          "default": "json_ld",
+          "title": "Source Kind",
+          "type": "string"
+        }
+      },
+      "title": "RecipeEvidence",
+      "type": "object"
+    },
+    "Signals": {
+      "additionalProperties": false,
+      "properties": {
+        "description_recipe_signals": {
+          "additionalProperties": {
+            "type": "boolean"
+          },
+          "title": "Description Recipe Signals",
+          "type": "object"
+        },
+        "has_existing_transcript": {
+          "default": false,
+          "title": "Has Existing Transcript",
+          "type": "boolean"
+        },
+        "json_ld_completeness": {
+          "items": {
+            "additionalProperties": {
+              "type": "boolean"
+            },
+            "type": "object"
+          },
+          "title": "Json Ld Completeness",
+          "type": "array"
+        },
+        "visual_dependency_hints": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Visual Dependency Hints",
+          "type": "array"
+        }
+      },
+      "title": "Signals",
+      "type": "object"
+    },
+    "Step": {
+      "additionalProperties": false,
+      "properties": {
+        "section": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Section"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "text"
+      ],
+      "title": "Step",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "author": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Author"
+    },
+    "auto_subtitles": {
+      "items": {
+        "$ref": "#/$defs/Fragment"
+      },
+      "title": "Auto Subtitles",
+      "type": "array"
+    },
+    "canonical_url": {
+      "title": "Canonical Url",
+      "type": "string"
+    },
+    "content_hash": {
+      "default": "",
+      "title": "Content Hash",
+      "type": "string"
+    },
+    "description": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Fragment"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "duration_seconds": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Duration Seconds"
+    },
+    "html": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Fragment"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "language": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Language"
+    },
+    "language_basis": {
+      "anyOf": [
+        {
+          "enum": [
+            "source",
+            "subtitles"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Language Basis"
+    },
+    "manual_subtitles": {
+      "items": {
+        "$ref": "#/$defs/Fragment"
+      },
+      "title": "Manual Subtitles",
+      "type": "array"
+    },
+    "media": {
+      "items": {
+        "$ref": "#/$defs/MediaReference"
+      },
+      "title": "Media",
+      "type": "array"
+    },
+    "metadata_source_kind": {
+      "const": "metadata",
+      "default": "metadata",
+      "title": "Metadata Source Kind",
+      "type": "string"
+    },
+    "platform": {
+      "enum": [
+        "web",
+        "youtube",
+        "tiktok",
+        "instagram",
+        "facebook"
+      ],
+      "title": "Platform",
+      "type": "string"
+    },
+    "recipes": {
+      "items": {
+        "$ref": "#/$defs/RecipeEvidence"
+      },
+      "title": "Recipes",
+      "type": "array"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "signals": {
+      "$ref": "#/$defs/Signals"
+    },
+    "sizes": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "title": "Sizes",
+      "type": "object"
+    },
+    "source_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Source Id"
+    },
+    "source_type": {
+      "enum": [
+        "webpage",
+        "social_video"
+      ],
+      "title": "Source Type",
+      "type": "string"
+    },
+    "status": {
+      "default": "ok",
+      "enum": [
+        "ok",
+        "partial",
+        "blocked",
+        "error"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "thumbnail": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Thumbnail"
+    },
+    "timings_ms": {
+      "additionalProperties": {
+        "type": "number"
+      },
+      "title": "Timings Ms",
+      "type": "object"
+    },
+    "title": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Title"
+    },
+    "trust": {
+      "const": "untrusted_source_data",
+      "default": "untrusted_source_data",
+      "title": "Trust",
+      "type": "string"
+    },
+    "warnings": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Warnings",
+      "type": "array"
+    }
+  },
+  "required": [
+    "canonical_url",
+    "platform",
+    "source_type"
+  ],
+  "title": "EvidenceBundle",
+  "type": "object"
+}

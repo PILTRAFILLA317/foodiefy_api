@@ -1,0 +1,25 @@
+{
+  "id": "fixture-video",
+  "title": "Arroz narrado",
+  "description": "Ingredientes\n- 200 g arroz\n- 500 ml agua\nPasos\n1. Hervir el agua.\n2. Mezclar el arroz.\nDescripción completa: no perder esta última frase.",
+  "uploader": "Fixture propio",
+  "duration": 120,
+  "language": "es",
+  "thumbnail": "https://example.org/image.jpg?signature=not-a-secret-fixture",
+  "subtitles": {
+    "es": [
+      {
+        "ext": "vtt",
+        "url": "https://example.org/manual.vtt?signature=fixture"
+      }
+    ]
+  },
+  "automatic_captions": {
+    "es": [
+      {
+        "ext": "json3",
+        "url": "https://example.org/automatic.json3"
+      }
+    ]
+  }
+}

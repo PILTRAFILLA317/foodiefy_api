@@ -1,0 +1,102 @@
+{
+  "$defs": {
+    "Fact": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[a-z0-9_-]{1,80}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "ingredient",
+            "quantity",
+            "unit",
+            "step",
+            "temperature",
+            "time",
+            "servings",
+            "contradiction"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "title": "Value",
+          "type": "string"
+        },
+        "output_path": {
+          "title": "Output Path",
+          "type": "string"
+        },
+        "sources": {
+          "items": {
+            "enum": [
+              "description",
+              "transcript",
+              "visual",
+              "subtitles",
+              "json_ld",
+              "html"
+            ],
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Sources",
+          "type": "array"
+        },
+        "essential": {
+          "default": true,
+          "title": "Essential",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "value",
+        "output_path",
+        "sources"
+      ],
+      "title": "Fact",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "expected_status": {
+      "enum": [
+        "recipe",
+        "no_recipe"
+      ],
+      "title": "Expected Status",
+      "type": "string"
+    },
+    "reviewer": {
+      "minLength": 1,
+      "title": "Reviewer",
+      "type": "string"
+    },
+    "facts": {
+      "items": {
+        "$ref": "#/$defs/Fact"
+      },
+      "title": "Facts",
+      "type": "array"
+    }
+  },
+  "required": [
+    "expected_status",
+    "reviewer",
+    "facts"
+  ],
+  "title": "Reference",
+  "type": "object"
+}

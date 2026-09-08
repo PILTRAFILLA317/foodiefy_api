@@ -1,0 +1,624 @@
+{
+  "$defs": {
+    "Conflict": {
+      "additionalProperties": false,
+      "properties": {
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/FieldEvidence"
+          },
+          "type": "array"
+        },
+        "field_path": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "field_path",
+        "evidence"
+      ],
+      "type": "object"
+    },
+    "EvidenceSource": {
+      "enum": [
+        "source_text",
+        "source_audio",
+        "source_metadata",
+        "source_visual",
+        "manual",
+        "ai_inference"
+      ],
+      "type": "string"
+    },
+    "FieldEvidence": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "field_path": {
+          "type": "string"
+        },
+        "quote": {
+          "type": "string"
+        },
+        "source_kind": {
+          "enum": [
+            "description",
+            "manual_subtitles",
+            "auto_subtitles",
+            "transcript",
+            "html",
+            "json_ld",
+            "metadata",
+            "visual"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "field_path",
+        "source_kind",
+        "quote",
+        "artifact_id"
+      ],
+      "type": "object"
+    },
+    "Ingredient": {
+      "additionalProperties": false,
+      "properties": {
+        "evidence_source": {
+          "$ref": "#/$defs/EvidenceSource"
+        },
+        "group": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "is_estimated": {
+          "type": "boolean"
+        },
+        "name": {
+          "type": "string"
+        },
+        "position": {
+          "type": "integer"
+        },
+        "preparation": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "quantity": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "quantity_max": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "raw_text": {
+          "type": "string"
+        },
+        "unit": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "position",
+        "raw_text",
+        "name",
+        "quantity",
+        "quantity_max",
+        "unit",
+        "preparation",
+        "group",
+        "evidence_source",
+        "is_estimated"
+      ],
+      "type": "object"
+    },
+    "NutritionBasis": {
+      "enum": [
+        "whole_recipe",
+        "per_serving",
+        "per_100g"
+      ],
+      "type": "string"
+    },
+    "NutritionEstimate": {
+      "additionalProperties": false,
+      "properties": {
+        "assumptions": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "basis": {
+          "$ref": "#/$defs/NutritionBasis"
+        },
+        "carbs_g": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "fat_g": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "kcal": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "known_mass_g": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "method": {
+          "$ref": "#/$defs/NutritionMethod"
+        },
+        "protein_g": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "status": {
+          "$ref": "#/$defs/NutritionStatus"
+        }
+      },
+      "required": [
+        "basis",
+        "kcal",
+        "protein_g",
+        "carbs_g",
+        "fat_g",
+        "method",
+        "assumptions",
+        "status",
+        "known_mass_g"
+      ],
+      "type": "object"
+    },
+    "NutritionMethod": {
+      "enum": [
+        "source_label",
+        "calculated",
+        "ai_estimate",
+        "manual"
+      ],
+      "type": "string"
+    },
+    "NutritionStatus": {
+      "enum": [
+        "complete",
+        "partial",
+        "unavailable"
+      ],
+      "type": "string"
+    },
+    "RecipeDraft": {
+      "additionalProperties": false,
+      "properties": {
+        "cook_minutes": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "ingredients": {
+          "items": {
+            "$ref": "#/$defs/Ingredient"
+          },
+          "type": "array"
+        },
+        "nutrition": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/NutritionEstimate"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "prep_minutes": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "schema_version": {
+          "enum": [
+            "1.0"
+          ],
+          "type": "string"
+        },
+        "servings": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "source": {
+          "$ref": "#/$defs/RecipeSource"
+        },
+        "steps": {
+          "items": {
+            "$ref": "#/$defs/Step"
+          },
+          "type": "array"
+        },
+        "title": {
+          "type": "string"
+        },
+        "total_minutes": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "warnings": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "yield_text": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "schema_version",
+        "title",
+        "description",
+        "source",
+        "ingredients",
+        "steps",
+        "prep_minutes",
+        "cook_minutes",
+        "total_minutes",
+        "servings",
+        "yield_text",
+        "nutrition",
+        "warnings"
+      ],
+      "type": "object"
+    },
+    "RecipeSource": {
+      "additionalProperties": false,
+      "properties": {
+        "canonical_url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "creator": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "platform": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "source_kind": {
+          "$ref": "#/$defs/SourceKind"
+        },
+        "url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "url",
+        "canonical_url",
+        "platform",
+        "creator",
+        "source_kind"
+      ],
+      "type": "object"
+    },
+    "SourceKind": {
+      "enum": [
+        "web_page",
+        "social_post",
+        "video",
+        "manual"
+      ],
+      "type": "string"
+    },
+    "Step": {
+      "additionalProperties": false,
+      "properties": {
+        "duration_seconds": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "position": {
+          "type": "integer"
+        },
+        "source_timestamp_seconds": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "temperature_c": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "text": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "position",
+        "text",
+        "duration_seconds",
+        "temperature_c",
+        "source_timestamp_seconds"
+      ],
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "analysis_status": {
+      "enum": [
+        "recipe",
+        "partial",
+        "no_recipe"
+      ],
+      "type": "string"
+    },
+    "confidence": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "confidence_explanation": {
+      "type": "string"
+    },
+    "conflicts": {
+      "items": {
+        "$ref": "#/$defs/Conflict"
+      },
+      "type": "array"
+    },
+    "field_evidence": {
+      "items": {
+        "$ref": "#/$defs/FieldEvidence"
+      },
+      "type": "array"
+    },
+    "missing_information": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "recipe": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/RecipeDraft"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "schema_version": {
+      "enum": [
+        "1.0"
+      ],
+      "type": "string"
+    },
+    "visual_evidence_reasons": {
+      "items": {
+        "enum": [
+          "on_screen_quantities",
+          "no_useful_narration",
+          "incomplete_vs_metadata",
+          "ocr_frame_hint",
+          "predominantly_visual"
+        ],
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "visual_evidence_required": {
+      "type": "boolean"
+    },
+    "warnings": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    }
+  },
+  "required": [
+    "schema_version",
+    "analysis_status",
+    "recipe",
+    "confidence",
+    "confidence_explanation",
+    "warnings",
+    "missing_information",
+    "visual_evidence_required",
+    "visual_evidence_reasons",
+    "field_evidence",
+    "conflicts"
+  ],
+  "type": "object"
+}

@@ -1,0 +1,13 @@
+{
+  "contract": "recipe-draft",
+  "fixtures": {
+    "fixtures/recipe-draft.invalid-non-finite.json": "26a2bbf9727db41ef581ca6ee147e819f48a2c531e0ea4b543679a881641c693",
+    "fixtures/recipe-draft.invalid-per-serving.json": "70fa561f09133e85342123f36328aeadce441c9baff7c40d00ec880acf3cad61",
+    "fixtures/recipe-draft.invalid-range.json": "aa141875b6e16c85da3bef1bc9c6d674a9b9468ec38c3e8f966e1dafc2b28efe",
+    "fixtures/recipe-draft.valid-unknowns.json": "914257f330c2fcb44825678016a9cda18e25dd28fc70b3760af89d9e90c8c945",
+    "fixtures/recipe-draft.valid.json": "fae0eb0eccac19b8f1ffb1041d3ccae868a348a6d68066e2e59422166fbdbc07"
+  },
+  "schema_file": "recipe-draft.v1.schema.json",
+  "schema_sha256": "7fc60cb062d4bba73a81471b13764782eaf1c006971fa48906999059958f0f3c",
+  "schema_version": "1.0"
+}

@@ -5,3 +5,24 @@ scripts
 __pycache__/
 .env
 backup.py
+.venv*/
+.pytest_cache/
+.ruff_cache/
+!requirements*.txt
+!scripts/
+!scripts/*.py
+!contracts/
+!contracts/**/*.json
+.env.*
+!.env.example
+!tests/fixtures/acquisition/*.json
+.acquisition-output/
+!src/analysis/pricing.json
+# Phase 07: only public pending manifests/schemas/catalog are versioned.
+!benchmarks/*.json
+.benchmark-local/
+reports/
+!reports/
+reports/*
+!reports/20260908T000000Z-dry-run/
+!reports/20260908T000000Z-dry-run/*.json

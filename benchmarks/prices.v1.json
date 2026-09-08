@@ -1,0 +1,38 @@
+{
+  "version": "2026-09-08.benchmark.v1",
+  "verified_on": "2026-09-08",
+  "currency": "USD",
+  "sources": [
+    "https://developers.openai.com/api/docs/pricing",
+    "https://developers.openai.com/api/docs/models/gpt-5.6-luna",
+    "https://ai.google.dev/gemini-api/docs/pricing",
+    "https://ai.google.dev/gemini-api/docs/models/gemini-2.5-flash-lite"
+  ],
+  "models": {
+    "gpt-transcribe": {
+      "provider": "openai",
+      "per_minute": 0.0045
+    },
+    "gpt-5-nano": {
+      "provider": "openai",
+      "input_per_million": 0.05,
+      "output_per_million": 0.4
+    },
+    "gpt-5.6-luna": {
+      "provider": "openai",
+      "input_per_million": 0.2,
+      "output_per_million": 1.2
+    },
+    "gemini-2.5-flash-lite": {
+      "provider": "gemini",
+      "input_per_million": 0.1,
+      "audio_input_per_million": 0.3,
+      "output_per_million": 0.4
+    }
+  },
+  "notes": [
+    "Standard direct API, no cache discounts, tax or hosting. Luna input bounded below 272K.",
+    "Flash-Lite 2.5 is the economical stable model still officially listed, not a measured quality winner.",
+    "Groq is optional and not configured; no implicit substitute."
+  ]
+}

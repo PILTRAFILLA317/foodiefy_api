@@ -372,3 +372,27 @@ def test_pasted_recipe_uses_same_auth_quota_ledger_without_fetch_or_stt(local):
     Worker(cfg,resolver_factory=ForbiddenResolver,extractor_factory=Extract).run_once()
     ledger=admin.execute('select operation from foodiefy_imports.usage_ledger where job_id=%s',(job,)).fetchall()
     assert sorted(row['operation'] for row in ledger)==['source','text_extraction']
+
+
+def test_operational_heartbeat_queue_and_cleanup_metrics(local):
+    store, admin, users, cfg = local
+    job = enqueue(store, users[0], cfg)
+    worker_id = uuid4()
+    store.heartbeat(worker_id)
+    metrics = store.metrics()
+    assert metrics['live_workers'] >= 1
+    assert metrics['queued'] >= 1
+    assert metrics['oldest_queued_seconds'] >= 0
+    assert 'payload' not in metrics and 'owner_id' not in metrics
+    admin.execute('delete from foodiefy_imports.worker_heartbeats where worker_id=%s', (worker_id,))
+    store.cancel(users[0],job['id'])
+
+
+def test_worker_kill_switch_keeps_jobs_queued_and_heartbeats(local):
+    store, admin, users, cfg = local
+    job = enqueue(store,users[0],cfg)
+    worker = Worker(cfg.model_copy(update={'IMPORT_ENABLED':False}))
+    assert worker.run_once() is False
+    assert store.get(users[0],job['id'])['status'] == 'queued'
+    assert store.metrics()['live_workers'] >= 1
+    admin.execute('delete from foodiefy_imports.worker_heartbeats where worker_id=%s', (worker.id,))

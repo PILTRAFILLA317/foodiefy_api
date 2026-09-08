@@ -1,0 +1,14 @@
+# Deny by default: no secrets, backups, private fixtures, Git or local venv.
+**
+!Dockerfile
+!requirements.lock
+!src/
+!src/**
+!scripts/
+!scripts/web.py
+!scripts/container_verify.py
+**/__pycache__/**
+**/*.pyc
+**/.env*
+src/legacy_fastapi.py
+src/flask_app.py

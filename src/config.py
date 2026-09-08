@@ -1,13 +1,14 @@
 from typing import Literal
+from urllib.parse import urlsplit
 
-from pydantic import Field, SecretStr
+from pydantic import Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
     """Server settings; health never requires credentials or legacy extras."""
 
-    model_config = SettingsConfigDict(env_file=None, extra="ignore")
+    model_config = SettingsConfigDict(env_file=None, extra="ignore", hide_input_in_errors=True)
 
     APP_ENV: Literal["local", "staging", "production"] = "local"
     API_TITLE: str = "Foodiefy API"
@@ -28,10 +29,32 @@ class Settings(BaseSettings):
     SUPABASE_URL: str | None = None
     SUPABASE_JWT_AUDIENCE: str = "authenticated"
     SUPABASE_JWT_SECRET: SecretStr | None = None  # Local legacy JWT verification only.
+    ENABLE_MOCKS: bool = False
+    BYPASS_AUTH: bool = False
+    ALLOW_INSECURE_HTTP: bool = False
+    IMPORT_ENABLED: bool = True
+    OPS_TOKEN: SecretStr | None = None
+    WORKER_POLL_SECONDS: int = Field(default=2, ge=1, le=60)
+    WORKER_HEARTBEAT_MAX_AGE_SECONDS: int = Field(default=90, ge=30, le=300)
+    IMPORT_MIN_FREE_DISK_BYTES: int = Field(default=256 * 1024**2, ge=64*1024**2)
+    IMPORT_TEMP_TTL_SECONDS: int = Field(default=3600, ge=600, le=86400)
     IMPORT_ALLOW_PAID: bool = False
     IMPORT_ALLOW_LOCAL_SOCIAL: bool = False
     IMPORT_MAX_DURATION_SECONDS: int = Field(default=300, ge=1, le=300)
     IMPORT_MAX_MEDIA_BYTES: int = Field(default=50 * 1024**2, ge=1024, le=50 * 1024**2)
+
+    @model_validator(mode="after")
+    def secure_runtime(self):
+        if self.ENABLE_MOCKS or self.BYPASS_AUTH or self.ALLOW_INSECURE_HTTP:
+            raise ValueError("unsafe_runtime_flags_forbidden")
+        if self.APP_ENV != "local":
+            if self.ENABLE_LEGACY_IMPORT or self.IMPORT_ALLOW_LOCAL_SOCIAL or self.SUPABASE_JWT_SECRET:
+                raise ValueError("local_only_features_forbidden")
+            if self.SUPABASE_URL:
+                url = urlsplit(self.SUPABASE_URL)
+                if url.scheme != "https" or not url.hostname or url.username or url.password or url.query or url.fragment:
+                    raise ValueError("supabase_https_required")
+        return self
 
 
 # Compatibility for the isolated legacy module. No dotenv file is loaded implicitly.

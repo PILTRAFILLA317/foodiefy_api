@@ -1,5 +1,154 @@
 # Progreso de recuperación · Foodiefy API
 
+## Fase 11 · 2026-09-08
+
+**Preparación de staging implementada y verificada localmente. Hosting, builds,
+restore y soporte desde IP de datacenter NO verificados.**
+
+### Decisiones y archivos/contratos afectados
+
+- Dockerfile no-root: Python 3.14.0 por digest, snapshot Debian y FFmpeg fijados,
+  wheels lockeadas, sin Torch/Whisper; comandos separados web/worker. Contexto
+  `.dockerignore` por allowlist. Nixpacks se conserva en docs/operations como legacy.
+- `.railway/railway.ts` y lock npm: dos servicios del mismo repo, worker sin URL,
+  guard de proyecto/staging/región y variables selladas por servicio. Documentación
+  actual usa IaC; Config as Code JSON/TOML ya no admite servicios nuevos. CLI local
+  4.10.0 insuficiente: runbook fija CLI 5.49.6 y SDK 3.11.0. No se conectó GitHub.
+- `src/config.py`, imports/api/store/worker, fastapi_app y operations: configuración
+  insegura rechazada, kill switch, readiness DB/esquema, heartbeat, edad de cola,
+  cuotas/limpieza, logs sin contenido privado, correlación y métricas protegidas.
+  Se conserva worker durable de fase 8; no BackgroundTasks ni migraciones al arrancar.
+- Migración aditiva `20260908153758_phase11_worker_observability.sql`: tabla privada
+  de heartbeat con RLS y permisos backend. Aplicada exclusivamente al contenedor
+  local supabase_db_foodiefy_api (API loopback:54321, PostgreSQL:54322), sin reset.
+- Escáner detectó vulnerabilidades en dependencias previas. Actualización acotada:
+  FastAPI 0.141.1, Starlette 1.3.1, yt-dlp 2026.7.4 y annotated-doc 0.0.5;
+  requirements y ambos locks coherentes. Legacy no forma parte de la imagen.
+- `.github/workflows`: lint/tests/contratos/IaC y escáneres fijados; SQL local
+  efímero solo workflow manual. Sin builds, deploy ni llamadas pagadas automáticas.
+- `scripts/web.py`, container_verify, smoke_staging y security_scan; runbooks
+  deploy/rollback, variables, observabilidad, backup/restore y matriz de staging.
+  Contratos /v1 sin cambios de fase 11; trabajo previo de fase 10 conservado.
+
+### Pruebas con resultado real
+
+| Prueba | Resultado |
+| --- | --- |
+| Suite API con Postgres local opt-in y proveedores simulados | **177 PASS**, 2 warnings de deprecación |
+| Revisión final readiness/operations/imports | **23 PASS**, 2 warnings |
+| Ruff src/tests/scripts y pip check | **PASS** |
+| pgTAP local | **87 PASS**; advisors sin incidencias, lint sin errores |
+| Cinco generadores de contratos --check | **PASS** |
+| Railway TypeScript | **PASS** |
+| Sintaxis YAML de tres workflows | **PASS**, no ejecución GitHub Actions |
+| Gitleaks 8.28.0, ambos repos | **0 hallazgos** en archivos versionados/no ignorados; no historial Git completo |
+| OSV Scanner 2.2.2 | **0 avisos** tras corrección, lock runtime API + Railway npm; no lock dev Python |
+| Wheels Linux x86_64/Python 3.14 | **32 descargadas**, disponibilidad; no ejecución Linux |
+| Flutter staging/session | **5 PASS**; snapshot de contratos **PASS** |
+| Flutter analyze | **0 errores/warnings; 12 infos preexistentes** |
+| Builds, contenedor, GitHub Actions real, despliegue, SQL remoto, IA pagada, restore, smoke hosting | **NO EJECUTADO** |
+
+El primer pgTAP falló por el recuento anterior de tablas RLS (6→7); corregido y
+repetido con PASS. El parser YAML detectó un comando sin comillas; corregidos los
+comandos antes del PASS. Los avisos de seguridad iniciales no se ocultaron: se
+actualizaron dependencias relacionadas y se repitieron suite y escaneo.
+
+### Bloqueos, instrucciones manuales y siguiente entrada
+
+[Índice fase 11](phase11.md), [deploy/rollback](../operations/deploy-rollback.md),
+[backup/restore](../operations/backup-restore.md),
+[matriz staging](../operations/staging-smoke.md) contienen comandos exactos.
+Propietario: revisar coste real (Hobby no es factura fija de dos servicios), crear
+proyecto/entorno y elegir región junto a Supabase, revisar plan sin destrucciones,
+construir imagen y ejecutar gate Linux, promover migraciones revisando destino,
+desplegar ambos servicios y configurar alertas. Después ejecutar smoke y restart,
+y restore aislado con imagen y verificación ownership/RLS desde app staging.
+
+IMPORT_ENABLED y pagos quedan cerrados por defecto. YouTube/TikTok/Instagram y
+rutas audio/visual siguen **BLOQUEADAS en Linux** hasta disponer de barrera egress
+probada y smoke real; no se anuncian como soporte. Web Recipe también requiere
+smoke real antes de certificarse. Región/proyecto/budget, alertas y copias externas
+cifradas pendientes; RPO 24h/RTO 4h son objetivos, no mediciones.
+
+Siguiente entrada: verificación manual de fase 11; no fase 12. Sin commits,
+contrataciones, builds ni modificaciones remotas.
+Commit propuesto, no ejecutado: `chore: prepare staging deployment and operational runbooks`.
+
+## Fase 10 · 2026-09-08
+
+**Persistencia privada de compra aplicada y probada exclusivamente en Supabase
+local. Contrato versionado sincronizado a Flutter; recálculo IA no habilitado.**
+
+### Decisiones y archivos/contratos afectados
+
+- Migraciones CLI `20260908150557_phase10_shopping.sql`,
+  `20260908151425_phase10_shopping_validation.sql` y
+  `20260908151942_phase10_shopping_upper_bound.sql`: shopping_lists única por owner,
+  shopping_items con numeric nullable/rangos, auditoría/revisión, snapshots de
+  origen y tombstones; recibos private.shopping_operations. RLS y FK compuesta,
+  RPC SECURITY INVOKER, guards de escritura directa, revisión en edición/borrado,
+  marcado absoluto en orden aceptado y replay por UUID/payload.
+- Refinamientos forward-only después de aplicación local; no se reescribieron
+  migraciones aplicadas. Destino verificado por contenedor/puertos:
+  supabase_db_foodiefy_api, API loopback:54321 y PostgreSQL 54322.
+- Fusión únicamente escalar g/kg, mismo nombre completo/preparación y raw sin
+  descriptor comercial omitido. No g/ml, lata/g, rangos ni unknown. Raw original
+  conservado por aportación; receta eliminada no elimina su snapshot de compra.
+- `src/contracts/shopping_v1.py`, `scripts/generate_shopping_contract.py`,
+  `contracts/shopping.v1.*`, contracts/README: schema/manifest/fixtures revisados
+  y hashes reproducibles, copia al hermano. No owner/auditoría libre en input.
+- `supabase/tests/database/05_shopping.test.sql`, `tests/test_shopping_contract.py`
+  y `scripts/test_shopping_local.py`: SQL real/contrato y smoke Auth/PostgREST
+  con guardia loopback y cuentas sintéticas, sin imprimir secretos.
+- No se modificó el pipeline IA: actualmente rechaza estimar nutrición como efecto
+  de extracción. El nuevo móvil muestra esa indisponibilidad y permite datos
+  manuales/etiqueta; no hay proveedor/cuota nutricional ficticios.
+
+### Pruebas con resultado real
+
+| Prueba | Resultado |
+| --- | --- |
+| Flutter suite `rtk proxy flutter test --no-pub --reporter expanded` | **PASS: 56 tests, 1 skip explícito** (HTTP anterior fase 04 no activado) |
+| Focalizada final `flutter test --no-pub test/shopping_test.dart --reporter expanded` | **PASS: 9 tests**: 2→4, fracciones/unknown, per100g sin masa, persistencia/reinicio, respuesta perdida, A→B, tombstone, dependencia tras merge, conflicto revisado, límite atómico y nutrición/etiqueta |
+| `flutter analyze --no-pub --no-fatal-infos` | **PASS: 0 errores, 0 warnings; 12 infos preexistentes** |
+| API suite `python -m pytest -q` | **PASS: 151 tests; 15 skips explícitos** de integración imports opt-in; 172 avisos deprecación |
+| API contrato/fixtures final `pytest -q tests/test_shopping_contract.py` | **PASS: 5 tests** |
+| Generador shopping `--check --sync-flutter ../foodiefy/contracts`; generador RecipeDraft `--check` | **PASS**, snapshot/schema/manifest/fixtures coherentes |
+| `supabase db push --local --yes` | **PASS**, tres migraciones incrementales aplicadas solo a foodiefy_api local existente, sin reset |
+| `supabase test db --local` | **PASS: 83 pgTAP**, 21 nuevos shopping; replay, cantidades/unidades/formas, permisos A/B, revisión, auditoría, tombstone y máximo sin mínimo |
+| `python -m scripts.test_shopping_local --local` | **PASS: Auth/PostgREST reales, 9 checks**, cuentas sintéticas locales; replay/merge/A-B/PATCH/tombstone |
+| `supabase db advisors --local --type all --fail-on warn`, `db lint --local --level warning` | **PASS**, sin incidencias ni errores |
+| Ruff `check src tests scripts`; `git diff --check` ambos repos | **PASS** |
+| Dispositivo/simulador, modo avión físico, cierre/reapertura nativo y dos apps reales | **NO EJECUTADO**; tests usan SQLite real + transporte inyectado, y smoke HTTP separado |
+| IA pagada, recálculo nutricional IA, medios remotos, producción, builds de app/contenedor, commits/despliegues | **NO EJECUTADO** |
+
+La primera suite Flutter completa detectó que había cambiado el texto exacto de
+«Nutrición no disponible»; se conservó ese texto y la ejecución posterior pasó.
+Dos invocaciones de flutter test desde el padre fallaron antes de ejecutar tests;
+se repitieron desde foodiefy. La documentación Drift inicialmente devolvió 404 en
+rutas antiguas; se localizó desde su índice la ruta oficial actual. Los fallos no
+cuentan como PASS. Se corrigieron los nuevos infos de estilo, sin tocar los 12
+anteriores. SDKs/lockfiles se conservaron; no se instaló ninguna dependencia.
+
+### Bloqueos y siguiente entrada
+
+Guía completa y pasos manuales exactos: [phase10.md](phase10.md). Verificar Home →
+carrito, dos recetas revisadas, raciones, kg/g frente a g/ml, modo avión y logout
+con pendientes. La cache de compras no prueba por sí sola comportamiento nativo.
+
+**Recálculo IA no habilitado**: falta proveedor nutricional, cuota/ledger y precio
+específicos. La UI devuelve indisponibilidad explícita, sin llamada ni coste; no
+presenta éxito simulado ni usa extracción para inventar macros. Se permiten entrada
+manual/etiqueta y conversiones aritméticas válidas. Undo de aportaciones no soportado;
+los snapshots/recibos se conservan. No se entrega base alimentaria ni catálogo.
+
+Siguiente entrada: verificación manual de Fase 10 y definición/habilitación del
+recálculo nutricional pendiente si se desea. No se avanzó a Fase 11. No hubo commits,
+reset/clean, borrado legacy, modificaciones remotas ni builds.
+
+Commit propuesto por repositorio, **no ejecutado**:
+`feat: add offline shopping list and transparent nutrition`.
+
 ## Fase 09 · 2026-09-08
 
 **Ajustes compatibles para la integración Flutter. No se modifican política de

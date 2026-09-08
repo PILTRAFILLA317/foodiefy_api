@@ -40,8 +40,28 @@ class Store:
     def controls(db):
         return db.execute('select * from foodiefy_imports.controls').fetchone()
 
+    def heartbeat(self, worker):
+        with self.tx() as db:
+            db.execute("insert into foodiefy_imports.worker_heartbeats(worker_id) values(%s) on conflict(worker_id) do update set seen_at=now()", (worker,))
+            db.execute("delete from foodiefy_imports.worker_heartbeats where seen_at<now()-interval '7 days'")
+
+    def metrics(self):
+        with self.tx() as db:
+            jobs = db.execute("""select count(*) filter(where status='queued') as queued,
+                count(*) filter(where status='running') as running,
+                coalesce(extract(epoch from now()-min(created_at) filter(where status='queued')),0) as oldest_queued_seconds,
+                count(*) filter(where status='running' and lease_until<now()) as expired_leases,
+                count(*) filter(where status='failed' and updated_at>now()-interval '1 hour') as failed_last_hour
+                from foodiefy_imports.jobs""").fetchone()
+            workers = db.execute("select count(*) as live_workers from foodiefy_imports.worker_heartbeats where seen_at>now()-make_interval(secs=>%s)", (self.config.WORKER_HEARTBEAT_MAX_AGE_SECONDS,)).fetchone()
+            cleanup = db.execute("select (select count(*) from foodiefy_imports.artifacts where expires_at<now())+(select count(*) from foodiefy_imports.private_cache where expires_at<now()) as cleanup_pending").fetchone()
+            spend = db.execute("select coalesce(sum(greatest(reserved_usd,coalesce(estimated_usd,0),coalesce(actual_usd,0))),0) as committed_usd, count(*) filter(where state='uncertain') as uncertain_charges from foodiefy_imports.usage_ledger").fetchone()
+            control = self.controls(db)
+            return {**jobs, **workers, **cleanup, **spend, 'global_budget_usd':control['global_usd'], 'imports_enabled':control['enabled'] and self.config.IMPORT_ENABLED, 'paid_enabled':control['paid_enabled']}
+
     def ready(self):
         with self.tx() as db:
+            db.execute("select worker_id from foodiefy_imports.worker_heartbeats limit 0")
             return self.controls(db) is not None
 
     def submit(self, owner, key, payload, policy_hash):

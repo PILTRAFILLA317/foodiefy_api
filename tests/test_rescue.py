@@ -47,6 +47,10 @@ assert 'torch' not in sys.modules
 
 @pytest.mark.parametrize("environment", ["local", "staging", "production"])
 def test_opt_in_without_keys_or_budget_is_controlled(environment):
+    if environment != "local":
+        with pytest.raises(ValidationError, match="local_only_features_forbidden"):
+            Settings(APP_ENV=environment, ENABLE_LEGACY_IMPORT=True)
+        return
     settings = Settings(APP_ENV=environment, ENABLE_LEGACY_IMPORT=True)
     with TestClient(create_app(settings)) as client:
         response = client.post("/api/analyze-recipe", json={"url": "https://example.invalid"})

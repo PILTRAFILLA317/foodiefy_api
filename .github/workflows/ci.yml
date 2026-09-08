@@ -1,0 +1,48 @@
+name: API checks (no build or deployment)
+'on': [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+concurrency:
+  group: api-checks-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  checks:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      APP_ENV: local
+      IMPORT_ALLOW_PAID: 'false'
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.14.0'
+      - run: "python -m pip install --only-binary=:all: -r requirements-dev.lock"
+      - run: "python -m pip check"
+      - run: "ruff check src tests scripts"
+      - run: "python -m pytest -q tests/test_operations.py tests/test_imports.py tests/test_rescue.py tests/test_recipe_contract_v1.py tests/test_shopping_contract.py"
+      - run: |
+          python -m scripts.generate_contracts --check
+          python -m scripts.generate_import_contract --check
+          python -m scripts.generate_analysis_contract --check
+          python -m scripts.generate_evidence_contract --check
+          python -m scripts.generate_shopping_contract --check
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.19.0'
+      - run: "npm --prefix .railway ci --ignore-scripts --no-audit --no-fund"
+      - run: "npm --prefix .railway run check"
+  security:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.14.0'
+      - run: "python scripts/security_scan.py secrets"
+      - run: "python scripts/security_scan.py dependencies"

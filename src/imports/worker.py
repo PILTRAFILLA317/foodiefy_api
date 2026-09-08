@@ -4,13 +4,16 @@ import io
 import json
 import logging
 import random
+import shutil
 import signal
+import tempfile
 import threading
 import zipfile
 from contextlib import contextmanager
+from pathlib import Path
 from uuid import uuid4
 
-from src.acquisition.jobs import job_directory
+from src.acquisition.jobs import collect_expired, job_directory
 from src.acquisition.models import EvidenceBundle, Limits
 from src.acquisition.resolver import SourceResolver
 from src.analysis.models import (
@@ -153,7 +156,14 @@ class Worker:
         self.visual_factory,self.media_factory=visual_factory,media_factory
 
     def run_once(self):
+        self.store.heartbeat(self.id)
         self.store.collect()
+        collect_expired(Path(tempfile.gettempdir()) / 'foodiefy-acquisition', self.config.IMPORT_TEMP_TTL_SECONDS)
+        if not self.config.IMPORT_ENABLED:
+            return False
+        if shutil.disk_usage(tempfile.gettempdir()).free < self.config.IMPORT_MIN_FREE_DISK_BYTES:
+            LOG.warning('worker_unavailable code=disk_pressure')
+            return False
         job=self.store.claim(self.id)
         if not job:
             return False
@@ -164,6 +174,8 @@ class Worker:
                 raise PipelineError('lease_lost')
             try:
                 self.store.checkpoint(job,stage,visual=stage=='analyzing_visual_evidence')
+                if stage:
+                    LOG.info('job_stage job_id=%s stage=%s model=%s',job['id'],stage,self.config.RECIPE_EXTRACTOR_MODEL if stage=='extracting_recipe' else self.config.STT_MODEL if stage=='transcribing' else self.config.VISUAL_MODEL if stage=='analyzing_visual_evidence' else 'none')
             except JobError as exc:
                 lost.set() if exc.code=='lease_lost' else None
                 raise PipelineError(exc.code) from None
@@ -171,6 +183,7 @@ class Worker:
             while not done.wait(10):
                 try:
                     self.store.checkpoint(job)
+                    self.store.heartbeat(self.id)
                 except Exception:
                     lost.set()
                     return
@@ -265,7 +278,9 @@ def main():
     parser.add_argument('--allow-paid',action='store_true')
     parser.add_argument('--confirm-paid',action='store_true')
     args=parser.parse_args()
-    config=Settings().model_copy(update={'IMPORT_ALLOW_PAID':args.allow_paid and args.confirm_paid})
+    config=Settings()
+    config=config.model_copy(update={'IMPORT_ALLOW_PAID':config.IMPORT_ALLOW_PAID or (args.allow_paid and args.confirm_paid)})
+    logging.basicConfig(level=logging.INFO,format='%(message)s')
     worker=Worker(config)
     for sig in (signal.SIGINT,signal.SIGTERM):
         signal.signal(sig,lambda *_:worker.stop.set())
@@ -276,7 +291,7 @@ def main():
             LOG.warning('worker_unavailable code=service_unavailable')
         if args.once:
             break
-        worker.stop.wait(2)
+        worker.stop.wait(config.WORKER_POLL_SECONDS)
 
 
 if __name__=='__main__':

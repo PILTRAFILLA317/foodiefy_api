@@ -26,3 +26,12 @@ reports/
 reports/*
 !reports/20260908T000000Z-dry-run/
 !reports/20260908T000000Z-dry-run/*.json
+
+# Operational sources only; no local secrets/plans/backups.
+!.railway/
+!.railway/package.json
+!.railway/package-lock.json
+node_modules/
+.railway/*plan*.json
+backups/
+!ops/*.json

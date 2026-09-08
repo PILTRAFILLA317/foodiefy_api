@@ -6,7 +6,7 @@ import jwt
 import pytest
 from cryptography.hazmat.primitives.asymmetric import ec
 from fastapi.testclient import TestClient
-from pydantic import SecretStr
+from pydantic import SecretStr, ValidationError
 
 from scripts.generate_import_contract import files
 from src.config import Settings
@@ -83,7 +83,9 @@ def test_jwks_rotation_refresh_uses_only_configured_endpoint(monkeypatch):
 
 
 def test_prod_hs256_not_accepted_and_readiness_controlled():
-    cfg=config(APP_ENV='production',SUPABASE_JWT_SECRET=SecretStr('local-only-test-key'*3))
+    with pytest.raises(ValidationError,match='local_only_features_forbidden'):
+        config(APP_ENV='production',SUPABASE_JWT_SECRET=SecretStr('local-only-test-key'*3))
+    cfg=config(APP_ENV='production')
     v=JWTVerifier(cfg)
     with pytest.raises(JobError,match='unauthorized'):
         v.verify('Bearer '+jwt.encode({'sub':str(uuid4())},'local-only-test-key'*3,algorithm='HS256'))

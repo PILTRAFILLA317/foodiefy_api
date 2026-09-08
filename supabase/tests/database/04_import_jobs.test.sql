@@ -5,7 +5,7 @@ select has_table('foodiefy_imports','usage_ledger','separate usage ledger');
 select has_table('foodiefy_imports','artifacts','stage artifacts');
 select has_table('foodiefy_imports','attempts','fenced attempts');
 select has_table('foodiefy_imports','private_cache','private draft cache');
-select is((select count(*)::int from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='foodiefy_imports' and c.relkind='r' and c.relrowsecurity),6,'all internal tables have RLS');
+select is((select count(*)::int from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='foodiefy_imports' and c.relkind='r' and c.relrowsecurity),7,'all internal tables have RLS');
 select ok(not has_table_privilege('authenticated','foodiefy_imports.jobs','INSERT'),'client cannot enqueue by DB mutation');
 select ok(not has_table_privilege('authenticated','foodiefy_imports.jobs','UPDATE'),'client cannot alter owner/status/budget');
 select ok(not has_table_privilege('authenticated','foodiefy_imports.artifacts','SELECT'),'client cannot read private artifacts');

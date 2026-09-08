@@ -1,0 +1,12 @@
+{
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "tsc --noEmit --strict --target ES2022 --module NodeNext --moduleResolution NodeNext railway.ts"
+  },
+  "devDependencies": {
+    "railway": "3.11.0",
+    "typescript": "5.9.3",
+    "@types/node": "22.19.0"
+  }
+}

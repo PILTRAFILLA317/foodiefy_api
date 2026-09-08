@@ -10,6 +10,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app = FastAPI(title=config.API_TITLE, version=config.API_VERSION)
     from .imports.api import install
     install(app, config)
+    from .operations import install as install_operations
+    install_operations(app, config)
 
     @app.get("/health/live")
     def live() -> dict[str, str]:

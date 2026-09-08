@@ -41,6 +41,8 @@ def install(app, config):
 
     @router.post('/v1/imports', response_model=JobAccepted, status_code=202)
     async def submit(request: Request, user: Annotated[UUID, Depends(owner)], idempotency_key: Annotated[str | None, Header()] = None):
+        if not config.IMPORT_ENABLED:
+            raise JobError('service_unavailable',503)
         if idempotency_key is None or not re.fullmatch(r'[A-Za-z0-9._:-]{8,128}',idempotency_key):
             raise JobError('idempotency_key_required',400)
         body = b''

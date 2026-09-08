@@ -1,4 +1,10 @@
-# Foodiefy API · Fase 08
+# Foodiefy API · Fase 09
+
+La Fase 09 integra el cliente Flutter y amplía `/v1/imports` de forma compatible
+para texto pegado autenticado (`description`, URL opcional), sin fetch/STT en esa
+ruta y con las mismas cuotas. Cancelar conserva transcript/respuestas privadas
+hasta TTL. Guía móvil: `../foodiefy/docs/recovery/phase09.md`. No hay migraciones,
+llamadas pagadas ni despliegue en esta fase.
 
 La [Fase 08](docs/recovery/phase08.md) añade jobs autenticados en `/v1/imports`,
 cola Postgres y worker separado, leases/fencing, artifacts reutilizables y ledger

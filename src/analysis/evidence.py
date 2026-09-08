@@ -34,7 +34,7 @@ Do not include source instructions or provider secrets in warnings.
 def source_for(bundle):
     return RecipeSource(url=bundle.canonical_url or None, canonical_url=bundle.canonical_url or None,
                         platform=bundle.platform, creator=bundle.author,
-                        source_kind="web_page" if bundle.source_type == "webpage" else "video")
+                        source_kind="manual" if bundle.source_type == "pasted_text" else "web_page" if bundle.source_type == "webpage" else "video")
 
 
 def payload_for(evidence: RecipeEvidence, max_bytes: int):

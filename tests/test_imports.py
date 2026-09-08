@@ -103,3 +103,24 @@ def test_contract_only_stage_no_fake_percentage():
 def test_url_shape_rejected_without_dns(url):
     with pytest.raises(ValueError):
         ImportRequest(url=url)
+
+
+def test_pasted_description_contract_stays_separate_and_bounded():
+    from pydantic import ValidationError
+
+    from src.acquisition.models import EvidenceBundle, Fragment
+    from src.analysis.evidence import payload_for
+    from src.analysis.models import RecipeEvidence
+    text='Ingredientes: 15 g sal. Mezclar.'
+    request=ImportRequest(description=text)
+    assert request.url is None
+    with pytest.raises(ValidationError):
+        ImportRequest()
+    with pytest.raises(ValidationError):
+        ImportRequest(description='á'*3001)
+    with pytest.raises(ValidationError):
+        ImportRequest(description='  ')
+    bundle=EvidenceBundle(canonical_url='',platform=None,source_type='pasted_text',description=Fragment(source_kind='description',text=text,original_chars=len(text)))
+    data,_=payload_for(RecipeEvidence(bundle),20000)
+    assert data['description']==text and data['transcript'] is None
+    assert data['source']['source_kind']=='manual' and data['source']['url'] is None and data['source']['platform'] is None

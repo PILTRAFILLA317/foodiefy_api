@@ -1,5 +1,51 @@
 # Progreso de recuperación · Foodiefy API
 
+## Fase 09 · 2026-09-08
+
+**Ajustes compatibles para la integración Flutter. No se modifican política de
+modelos, límites de gasto, migraciones ni infraestructura.**
+
+### Decisiones y archivos/contratos afectados
+
+- `src/imports/models.py`, `api.py`: description opcional, URL opcional solo si
+  existe texto, máximo 6000 bytes UTF-8 y request completo 8192 bytes. El body URL
+  antiguo se serializa sin campos null nuevos, conservando su hash/idempotencia.
+- `worker.py`: texto pegado como Fragment description independiente, source_type
+  pasted_text, procedencia manual y plataforma null. No fetch ni audio/STT/visual.
+  Reutiliza cola, auth/ownership, cuotas y ledger de extracción de fase 08.
+- `src/acquisition/models.py`, `src/analysis/evidence.py`, `pipeline.py`: ampliación
+  aditiva de EvidenceBundle y routing textual. No se concatenan caption/transcript
+  ni se convierten textos pegados en instrucciones del sistema.
+- `store.py`: cancelación limpia medios pero conserva transcript/respuestas privadas
+  hasta TTL; fencing sigue bloqueando resultados tardíos. No se reenvía STT.
+- `contracts/imports.v1.*`, `evidence-bundle.v1.*`: regenerados; snapshot imports
+  sincronizado al hermano Flutter. RecipeDraft permanece intacto.
+- Tests de contrato/DB actualizados para texto autenticado y retención tras cancelar.
+  README y guía de fase 08 aclaran el cambio compatible de cancelación.
+
+### Pruebas y resultados reales
+
+| Prueba | Resultado |
+| --- | --- |
+| `rtk proxy env FOODIEFY_LOCAL_IMPORT_TESTS=1 .venv-recovery/bin/python -m pytest -q` | **PASS: 161 tests**, 220 avisos de deprecación, 18.38 s |
+| Suite focalizada imports/auth/Postgres | **PASS: 29 tests**; DB local real, proveedores simulados |
+| Texto pegado: dos usuarios, POST idempotente, cuota activa, sin fetch/STT | PASS; ledger source + text_extraction |
+| Description separada, límites UTF-8/vacío y plataforma desconocida null | PASS |
+| Cancelación conserva transcript, limpia audio y rechaza settlement tardío | PASS |
+| Migraciones nuevas/aplicadas, pgTAP/advisors repetidos en Fase 09 | **NO EJECUTADO**; no hay cambios SQL |
+| Llamadas pagadas, redes sociales reales, contenido de terceros, despliegues/builds | **NO EJECUTADO** |
+
+### Manual, bloqueos y siguiente entrada
+
+Guía exacta móvil/nativa: `../foodiefy/docs/recovery/phase09.md`. El propietario
+puede enviar texto autenticado mediante el mismo POST y comprobar límites sin
+adquirir URLs; la extracción real requiere autorización de pago, que sigue ausente.
+Android detectado, iPhone no accesible; la prueba física de Compartir y el flujo
+real description/STT/visual están pendientes. Se hereda el bloqueo de aislamiento
+social/medios en producción. No se avanzó a fase 10.
+
+Commit propuesto, **no ejecutado**: `feat: support pasted evidence in durable imports`.
+
 ## Fase 08 · 2026-09-08
 
 **Jobs duraderos implementados y probados con Postgres local. Pago y visual

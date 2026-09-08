@@ -137,11 +137,12 @@ def test_cancel_cleans_artifacts_and_fences_inflight(local):
     row=enqueue(store,users[0],cfg)
     job=store.claim(uuid4())
     store.put_artifact(job,'audio',blob=b'own-test')
+    store.put_artifact(job,'transcript',data={'text':'already paid'})
     entry=store.reserve(job,'stt','stt','openai','gpt-transcribe',.01,'test')
     store.cancel(users[0],row['id'])
     with pytest.raises(JobError,match='lease_lost'):
         store.settle(job,entry,data={'text':'late'},usage={'cost_estimate':.01})
-    assert admin.execute('select count(*) as n from foodiefy_imports.artifacts where job_id=%s',(row['id'],)).fetchone()['n']==0
+    assert admin.execute('select artifact_key from foodiefy_imports.artifacts where job_id=%s',(row['id'],)).fetchone()['artifact_key']=='transcript'
     assert admin.execute('select state from foodiefy_imports.usage_ledger where id=%s',(entry['id'],)).fetchone()['state']=='uncertain'
 
 
@@ -339,3 +340,35 @@ def test_pagination_owned_stable_cursor(local):
     assert len(first)==2 and len(second)==1 and tail is None
     assert not ({r['id'] for r in first}&{r['id'] for r in second})
     assert store.list(users[1],2,cursor)==([],None)
+
+
+def test_pasted_recipe_uses_same_auth_quota_ledger_without_fetch_or_stt(local):
+    store,admin,users,cfg=local
+    caption='Ingredientes: 15 g sal. Pasos: mezclar.'
+    class ForbiddenResolver:
+        def __init__(self,**kw): raise AssertionError('no third-party fetch')
+    class Extract:
+        def __init__(self,config,session,stage): self.session,self.stage=session,stage
+        def extract(self,evidence):
+            assert evidence.bundle.source_type=='pasted_text'
+            assert evidence.bundle.description.source_kind=='description'
+            assert evidence.bundle.description.text==caption
+            assert evidence.transcript is None
+            def invoke():
+                result=partial('needs_human_review')
+                return result.model_dump(mode='json'),StageUsage(stage=self.stage,provider='openai',model='gpt-5-nano',latency_ms=1,input_tokens=10,output_tokens=10)
+            data=self.session.execute(self.stage,'openai','gpt-5-nano',.001,invoke)
+            from src.analysis.models import AnalysisResult
+            return AnalysisResult.model_validate(data)
+    app=create_app(cfg)
+    with TestClient(app) as client:
+        headers={**bearer(cfg,users[0]),'Idempotency-Key':'pasted-recipe-0001'}
+        created=client.post('/v1/imports',headers=headers,json={'description':caption})
+        assert created.status_code==202
+        job=created.json()['job_id']
+        assert client.post('/v1/imports',headers=headers,json={'description':caption}).json()['job_id']==job
+        assert client.post('/v1/imports',headers={**headers,'Idempotency-Key':'pasted-recipe-0002'},json={'description':caption}).status_code==429
+        assert client.get('/v1/imports/'+job,headers=bearer(cfg,users[1])).status_code==404
+    Worker(cfg,resolver_factory=ForbiddenResolver,extractor_factory=Extract).run_once()
+    ledger=admin.execute('select operation from foodiefy_imports.usage_ledger where job_id=%s',(job,)).fetchall()
+    assert sorted(row['operation'] for row in ledger)==['source','text_extraction']

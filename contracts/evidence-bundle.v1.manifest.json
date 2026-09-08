@@ -1,6 +1,6 @@
 {
   "contract": "evidence-bundle",
   "schema_file": "evidence-bundle.v1.schema.json",
-  "schema_sha256": "01f06a634b4980e5a2ff7717c5e5f01ee344638eb594ab61a97bf72f93a53d75",
+  "schema_sha256": "b65c4ac33ef260dbdf8eb2e8652c70f340afe2474e1a6f85ae5f77f1357cac40",
   "schema_version": "1.0"
 }

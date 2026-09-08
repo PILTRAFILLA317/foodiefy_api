@@ -136,7 +136,7 @@ class RecipePipeline:
                 has_subtitles = signals.has_existing_transcript
                 if state.transcript is not None:
                     result = self._extract(self.post_extractor, evidence)
-                elif has_subtitles or rich_description or bundle.source_type == "webpage":
+                elif has_subtitles or rich_description or bundle.source_type in {"webpage", "pasted_text"}:
                     result = state.text_result.model_copy(deep=True) if state.text_result else self._extract(self.text_extractor, evidence)
                     state.text_result = result.model_copy(deep=True)
                 required_missing = result.recipe is None or any(p.startswith(("ingredients", "steps", "recipe_evidence")) for p in result.missing_information)

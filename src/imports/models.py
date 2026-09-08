@@ -5,7 +5,7 @@ from typing import Literal
 from urllib.parse import urlsplit
 from uuid import UUID
 
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, model_validator
 
 from src.acquisition.models import Model
 from src.analysis.models import AnalysisResult
@@ -17,11 +17,14 @@ TERMINAL = {'succeeded', 'partial', 'failed', 'canceled'}
 
 
 class ImportRequest(Model):
-    url: str = Field(min_length=8, max_length=4096)
+    url: str | None = Field(default=None, min_length=8, max_length=4096)
+    description: str | None = Field(default=None, min_length=1, max_length=6000)
 
     @field_validator('url')
     @classmethod
     def safe_shape(cls, value):
+        if value is None:
+            return value
         try:
             u = urlsplit(value)
             if u.scheme not in {'http', 'https'} or not u.hostname or u.username is not None or u.password is not None or u.port not in {None, 80, 443}:
@@ -29,6 +32,16 @@ class ImportRequest(Model):
         except ValueError:
             raise ValueError('invalid_url') from None
         return value
+
+
+    @model_validator(mode='after')
+    def input_source(self):
+        if self.description is not None:
+            if not self.description.strip() or len(self.description.encode()) > 6000:
+                raise ValueError('description_limit')
+        if self.url is None and self.description is None:
+            raise ValueError('source_required')
+        return self
 
 
 class JobView(Model):

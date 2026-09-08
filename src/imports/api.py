@@ -53,7 +53,7 @@ def install(app, config):
         except ValueError:
             raise JobError('source_unavailable',422) from None
         from .policy import policy_hash
-        row = await run_in_threadpool(app.state.import_store.submit,user,idempotency_key,payload.model_dump(mode='json'),policy_hash(config))
+        row = await run_in_threadpool(app.state.import_store.submit,user,idempotency_key,payload.model_dump(mode='json', exclude_none=True),policy_hash(config))
         return JobAccepted(job_id=row['id'])
 
     @router.get('/v1/imports', response_model=JobPage)

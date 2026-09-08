@@ -193,7 +193,15 @@ class Worker:
                         raise PipelineError('source_unavailable')
                     bundle=EvidenceBundle.model_validate(saved['data'])
                 else:
-                    bundle=self.resolver_factory(limits=limits,environment=self.config.APP_ENV,allow_local_social=self.config.IMPORT_ALLOW_LOCAL_SOCIAL,on_stage=guard).resolve(job['payload']['url'])
+                    if job['payload'].get('description') is not None:
+                        from src.acquisition.models import Fragment
+                        guard('extracting_metadata')
+                        text=job['payload']['description']
+                        bundle=EvidenceBundle(canonical_url=job['payload'].get('url') or '',platform=None,source_type='pasted_text',
+                            description=Fragment(source_kind='description',text=text,original_chars=len(text)),
+                            warnings=['user_pasted_description'],sizes={'description_bytes':len(text.encode())})
+                    else:
+                        bundle=self.resolver_factory(limits=limits,environment=self.config.APP_ENV,allow_local_social=self.config.IMPORT_ALLOW_LOCAL_SOCIAL,on_stage=guard).resolve(job['payload']['url'])
                     guard()
                     if bundle.status in {'blocked','error'}:
                         session.transient='stage_timeout' in bundle.warnings
@@ -217,7 +225,7 @@ class Worker:
             config=self.config.model_copy(update={'AI_TRANSIENT_RETRIES':0})
             def wrap(adapter,key,stage,method='extract',cls=AnalysisResult):
                 return CachedCall(self.store,job,guard,adapter,key,stage,method,cls)
-            media=CachedMedia(self.store,job,guard,self.media_factory(config,source_url=job['payload']['url'],allow_local_social=config.IMPORT_ALLOW_LOCAL_SOCIAL,limits=limits))
+            media=CachedMedia(self.store,job,guard,self.media_factory(config,source_url=job['payload'].get('url'),allow_local_social=config.IMPORT_ALLOW_LOCAL_SOCIAL,limits=limits))
             pipeline=RecipePipeline(config,session,media=media,
                 transcriber=wrap(self.transcriber_factory(config,session),'transcript','transcribing','transcribe',TranscriptResult),
                 text_extractor=wrap(self.extractor_factory(config,session,stage='text_extract'),'text_result','extracting_recipe'),

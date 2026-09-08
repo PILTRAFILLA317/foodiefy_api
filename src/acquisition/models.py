@@ -69,8 +69,8 @@ class EvidenceBundle(Model):
     trust: Literal["untrusted_source_data"] = "untrusted_source_data"
     status: Literal["ok", "partial", "blocked", "error"] = "ok"
     canonical_url: str
-    platform: Literal["web", "youtube", "tiktok", "instagram", "facebook"]
-    source_type: Literal["webpage", "social_video"]
+    platform: Literal["web", "youtube", "tiktok", "instagram", "facebook"] | None
+    source_type: Literal["webpage", "social_video", "pasted_text"]
     source_id: str | None = None
     metadata_source_kind: Literal["metadata"] = "metadata"
     title: str | None = None

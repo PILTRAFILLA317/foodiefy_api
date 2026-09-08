@@ -170,7 +170,7 @@ worker iniciado con `--allow-paid --confirm-paid`, además de keys/config válid
 Para visual: ENABLE_VISUAL_FALLBACK y controls.visual_enabled; cuota separada.
 Ninguno está activado en la entrega. Kill switch general bloquea creación/claim/
 siguiente etapa; visual bloquea solo etapas visuales. Cancelar invalida el fencing,
-impide siguientes etapas y limpia artifacts, sin prometer refund de requests enviados.
+impide siguientes etapas y limpia medios. Desde Fase 09 conserva transcript y respuestas privadas hasta TTL, sin prometer refund de requests enviados.
 
 ## Operación local exacta sin gasto
 

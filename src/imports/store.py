@@ -92,7 +92,7 @@ class Store:
                 raise JobError('not_found',404)
             if row['status'] in {'queued','running'}:
                 row = db.execute("update foodiefy_imports.jobs set status='canceled',error_code='canceled',fencing_token=fencing_token+1,worker_id=null,lease_until=null,updated_at=now() where id=%s returning *",(job_id,)).fetchone()
-                db.execute('delete from foodiefy_imports.artifacts where job_id=%s',(job_id,))
+                db.execute("delete from foodiefy_imports.artifacts where job_id=%s and artifact_key<>'transcript' and artifact_key not like 'response:%%'",(job_id,))
                 db.execute("update foodiefy_imports.usage_ledger set state='uncertain' where job_id=%s and state='reserved'",(job_id,))
             return row
 

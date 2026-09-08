@@ -395,15 +395,22 @@
       "type": "string"
     },
     "platform": {
-      "enum": [
-        "web",
-        "youtube",
-        "tiktok",
-        "instagram",
-        "facebook"
+      "anyOf": [
+        {
+          "enum": [
+            "web",
+            "youtube",
+            "tiktok",
+            "instagram",
+            "facebook"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
       ],
-      "title": "Platform",
-      "type": "string"
+      "title": "Platform"
     },
     "recipes": {
       "items": {
@@ -443,7 +450,8 @@
     "source_type": {
       "enum": [
         "webpage",
-        "social_video"
+        "social_video",
+        "pasted_text"
       ],
       "title": "Source Type",
       "type": "string"
